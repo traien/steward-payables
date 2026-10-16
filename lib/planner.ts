@@ -154,7 +154,8 @@ export async function enhanceDecisions(
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(45_000),
       cache: "no-store",
-      redirect: "error",
+      // Workers support manual redirects; reject 3xx below without forwarding credentials.
+      redirect: "manual",
     });
     if (!response.ok) throw new Error("AI request failed.");
     const result = object(await response.json());

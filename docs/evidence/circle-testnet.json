@@ -1,0 +1,413 @@
+{
+  "exportedAt": "2026-10-16T20:32:46.874Z",
+  "disclosure": "Owner-supplied pilot data. Test USDC has no monetary value; no real invoices are discharged. Business participation must be evidenced separately.",
+  "auditIntegrity": true,
+  "metrics": {
+    "confirmedTestnetPayments": 1,
+    "confirmedTestnetUSDC": 1,
+    "realUSDCVolume": 0,
+    "simulatedPayments": 0
+  },
+  "workspace": {
+    "id": "[private workspace]",
+    "businessName": "Steward testnet verification · synthetic",
+    "mode": "pilot",
+    "balanceCents": 1899,
+    "vendors": [
+      {
+        "id": "circle-verification-recipient",
+        "name": "Controlled test wallet · fictional vendor",
+        "category": "Integration testing",
+        "approvedAddress": "0x948a4307b17c93a0a64dbf8d8c87aadcf40551dd"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "circle-verification-001",
+        "number": "TEST-001",
+        "vendorId": "circle-verification-recipient",
+        "description": "Synthetic one-USDC integration check; no business obligation",
+        "amountCents": 100,
+        "currency": "USD",
+        "dueDate": "2026-10-16",
+        "recipientAddress": "0x948a4307b17c93a0a64dbf8d8c87aadcf40551dd",
+        "purchaseOrderRef": "SYNTHETIC-PO-001",
+        "purchaseOrderAmountCents": 100,
+        "acceptanceVerified": true,
+        "sourceReference": "Synthetic integration fixture; test acceptance only; no real invoice",
+        "status": "settled",
+        "decision": {
+          "invoiceId": "circle-verification-001",
+          "action": "pay",
+          "reason": "Pay 1.00 USDC: due, matched, accepted, and within the available cash and delegated limits.",
+          "checks": [
+            {
+              "code": "policy",
+              "label": "Valid money and policy",
+              "passed": true,
+              "detail": "Cash floor 1.00 USDC plus 1.00 USDC reserved for fees."
+            },
+            {
+              "code": "amount",
+              "label": "Exact invoice amount",
+              "passed": true,
+              "detail": "Invoice must be a positive USD amount represented in integer cents."
+            },
+            {
+              "code": "identity",
+              "label": "Invoice identity",
+              "passed": true,
+              "detail": "Invoice reference: TEST-001."
+            },
+            {
+              "code": "duplicate",
+              "label": "Unique obligation",
+              "passed": true,
+              "detail": "No other invoice has this normalized vendor and invoice number."
+            },
+            {
+              "code": "vendor",
+              "label": "Known vendor",
+              "passed": true,
+              "detail": "Vendor record: Controlled test wallet · fictional vendor."
+            },
+            {
+              "code": "recipient",
+              "label": "Approved payment address",
+              "passed": true,
+              "detail": "Invoice recipient must match the independently approved vendor address."
+            },
+            {
+              "code": "purchase-order",
+              "label": "Purchase order match",
+              "passed": true,
+              "detail": "Order SYNTHETIC-PO-001 must authorize exactly the invoice amount."
+            },
+            {
+              "code": "source",
+              "label": "Source evidence",
+              "passed": true,
+              "detail": "Source reference: Synthetic integration fixture; test acceptance only; no real invoice."
+            },
+            {
+              "code": "acceptance",
+              "label": "Delivery accepted",
+              "passed": true,
+              "detail": "An operator recorded acceptance of the goods or services."
+            },
+            {
+              "code": "due-date",
+              "label": "Valid due date",
+              "passed": true,
+              "detail": "Invoice due date: 2026-10-16."
+            },
+            {
+              "code": "timing",
+              "label": "Payment timing",
+              "passed": true,
+              "detail": "This invoice is due or overdue."
+            },
+            {
+              "code": "payment-limit",
+              "label": "Per-payment cap",
+              "passed": true,
+              "detail": "Payment 1.00 USDC must be at or below 5.00 USDC."
+            },
+            {
+              "code": "approval",
+              "label": "Delegated approval limit",
+              "passed": true,
+              "detail": "Gross obligation 1.00 USDC must be at or below the delegated 5.00 USDC approval limit."
+            },
+            {
+              "code": "run-limit",
+              "label": "Review spending cap",
+              "passed": true,
+              "detail": "10.00 USDC remains available under this review's spending cap."
+            },
+            {
+              "code": "cash-reserve",
+              "label": "Protected operating cash",
+              "passed": true,
+              "detail": "18.00 USDC is available after earlier planned payments, operating reserve, and fee reserve."
+            }
+          ],
+          "amountCents": 100,
+          "evidence": [
+            "Cash floor 1.00 USDC plus 1.00 USDC reserved for fees.",
+            "Invoice must be a positive USD amount represented in integer cents.",
+            "Invoice reference: TEST-001.",
+            "No other invoice has this normalized vendor and invoice number.",
+            "Vendor record: Controlled test wallet · fictional vendor.",
+            "Invoice recipient must match the independently approved vendor address.",
+            "Order SYNTHETIC-PO-001 must authorize exactly the invoice amount.",
+            "Source reference: Synthetic integration fixture; test acceptance only; no real invoice.",
+            "An operator recorded acceptance of the goods or services.",
+            "Invoice due date: 2026-10-16.",
+            "This invoice is due or overdue.",
+            "Payment 1.00 USDC must be at or below 5.00 USDC.",
+            "Gross obligation 1.00 USDC must be at or below the delegated 5.00 USDC approval limit.",
+            "10.00 USDC remains available under this review's spending cap.",
+            "18.00 USDC is available after earlier planned payments, operating reserve, and fee reserve."
+          ],
+          "decidedAt": "2026-10-16T20:32:26.041Z",
+          "engine": "rules"
+        },
+        "payment": {
+          "idempotencyKey": "ef20c94c-4fc1-44f4-9570-b55966e818fa",
+          "mode": "testnet",
+          "status": "complete",
+          "amountCents": 100,
+          "recipientAddress": "0x948a4307b17c93a0a64dbf8d8c87aadcf40551dd",
+          "submittedAt": "2026-10-16T20:32:26.050Z",
+          "transactionId": "5a43ff11-6be5-5c92-b418-cc6f868d5d47",
+          "transactionHash": "0x318baf89186886c0723a6304f84517682aa98d2f7a5c11c2c27663cc0db7f034",
+          "completedAt": "2026-10-16T20:32:36.319Z"
+        }
+      }
+    ],
+    "audit": [
+      {
+        "id": "0ec98f46-bd2d-4858-b9d1-7e6c8cef9fd6",
+        "at": "2026-10-16T20:30:54.675Z",
+        "type": "import",
+        "title": "Business records imported",
+        "detail": "1 owner-supplied obligations. Payee approval and delivery acceptance are owner attestations, not independent verification by Steward.",
+        "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "hash": "7a38719f190508bdfe93fefeb1fd206d86fe885560896f123e53ffef6ec74b6a"
+      },
+      {
+        "id": "13063729-240c-41ef-9783-0834aa5f9557",
+        "at": "2026-10-16T20:32:26.050Z",
+        "type": "run",
+        "title": "Payment review started",
+        "detail": "1 obligations reviewed using deterministic rules.",
+        "previousHash": "7a38719f190508bdfe93fefeb1fd206d86fe885560896f123e53ffef6ec74b6a",
+        "hash": "082cbb1bee3349aaad6773593fa3cf2c612a6713369a93cb23c670f16aec7555"
+      },
+      {
+        "id": "0b383df1-755a-4f59-9287-31af8ce2e222",
+        "at": "2026-10-16T20:32:26.051Z",
+        "type": "decision",
+        "title": "PAY · TEST-001",
+        "detail": "Pay 1.00 USDC: due, matched, accepted, and within the available cash and delegated limits.",
+        "invoiceId": "circle-verification-001",
+        "previousHash": "082cbb1bee3349aaad6773593fa3cf2c612a6713369a93cb23c670f16aec7555",
+        "hash": "f89c47d40cfad0930d69500db0e6ac000c5a05bce28402aaa400041db5a02bfc"
+      },
+      {
+        "id": "5628f8ac-ad12-4b51-b8f1-92dcb00a4bae",
+        "at": "2026-10-16T20:32:26.054Z",
+        "type": "payment-intent",
+        "title": "Reserved · TEST-001",
+        "detail": "Saved payment intent before contacting Circle. Key ef20c94c-4fc1-44f4-9570-b55966e818fa.",
+        "invoiceId": "circle-verification-001",
+        "previousHash": "f89c47d40cfad0930d69500db0e6ac000c5a05bce28402aaa400041db5a02bfc",
+        "hash": "6e032986a100151432515cf15a72f534dbcf66182cf0c6bb1d8d2809e4aa4e39"
+      },
+      {
+        "id": "24fbf19a-0aee-452b-ba11-d88de1bc486f",
+        "at": "2026-10-16T20:32:26.880Z",
+        "type": "submitted",
+        "title": "Submitted · TEST-001",
+        "detail": "Circle transaction 5a43ff11-6be5-5c92-b418-cc6f868d5d47; awaiting confirmed settlement.",
+        "invoiceId": "circle-verification-001",
+        "previousHash": "6e032986a100151432515cf15a72f534dbcf66182cf0c6bb1d8d2809e4aa4e39",
+        "hash": "a080ac5049314b97248c9333df14722ef4c7d2153f9400566df5e706674b6d4e"
+      },
+      {
+        "id": "d6bdb7cb-87d5-4bc5-a294-49f1e17e5824",
+        "at": "2026-10-16T20:32:26.884Z",
+        "type": "run-complete",
+        "title": "Review complete",
+        "detail": "Testnet intents recorded. Reconcile to check confirmed transfers; fiat obligations remain outstanding.",
+        "previousHash": "a080ac5049314b97248c9333df14722ef4c7d2153f9400566df5e706674b6d4e",
+        "hash": "9c64d191562f8dba56cc599e50b4a8fbc6ec0a6e89b13fd1fa1c83911ce9433c"
+      },
+      {
+        "id": "4e315b9d-c881-4acd-a012-66b3f9b4f318",
+        "at": "2026-10-16T20:32:36.319Z",
+        "type": "settled",
+        "title": "Testnet settled · TEST-001",
+        "detail": "Confirmed testnet transfer 0x318baf89186886c0723a6304f84517682aa98d2f7a5c11c2c27663cc0db7f034. This does not discharge a real-world invoice.",
+        "invoiceId": "circle-verification-001",
+        "previousHash": "9c64d191562f8dba56cc599e50b4a8fbc6ec0a6e89b13fd1fa1c83911ce9433c",
+        "hash": "2da336dac8eca9fe68269e3b5425ae7f487943edcbe2e077d6ee12228754c19d"
+      }
+    ],
+    "runs": [
+      {
+        "id": "e63fa6c2-0438-48b2-ab32-15c4ab08308c",
+        "at": "2026-10-16T20:32:26.050Z",
+        "engine": "rules",
+        "decisions": [
+          {
+            "invoiceId": "circle-verification-001",
+            "action": "pay",
+            "reason": "Pay 1.00 USDC: due, matched, accepted, and within the available cash and delegated limits.",
+            "checks": [
+              {
+                "code": "policy",
+                "label": "Valid money and policy",
+                "passed": true,
+                "detail": "Cash floor 1.00 USDC plus 1.00 USDC reserved for fees."
+              },
+              {
+                "code": "amount",
+                "label": "Exact invoice amount",
+                "passed": true,
+                "detail": "Invoice must be a positive USD amount represented in integer cents."
+              },
+              {
+                "code": "identity",
+                "label": "Invoice identity",
+                "passed": true,
+                "detail": "Invoice reference: TEST-001."
+              },
+              {
+                "code": "duplicate",
+                "label": "Unique obligation",
+                "passed": true,
+                "detail": "No other invoice has this normalized vendor and invoice number."
+              },
+              {
+                "code": "vendor",
+                "label": "Known vendor",
+                "passed": true,
+                "detail": "Vendor record: Controlled test wallet · fictional vendor."
+              },
+              {
+                "code": "recipient",
+                "label": "Approved payment address",
+                "passed": true,
+                "detail": "Invoice recipient must match the independently approved vendor address."
+              },
+              {
+                "code": "purchase-order",
+                "label": "Purchase order match",
+                "passed": true,
+                "detail": "Order SYNTHETIC-PO-001 must authorize exactly the invoice amount."
+              },
+              {
+                "code": "source",
+                "label": "Source evidence",
+                "passed": true,
+                "detail": "Source reference: Synthetic integration fixture; test acceptance only; no real invoice."
+              },
+              {
+                "code": "acceptance",
+                "label": "Delivery accepted",
+                "passed": true,
+                "detail": "An operator recorded acceptance of the goods or services."
+              },
+              {
+                "code": "due-date",
+                "label": "Valid due date",
+                "passed": true,
+                "detail": "Invoice due date: 2026-10-16."
+              },
+              {
+                "code": "timing",
+                "label": "Payment timing",
+                "passed": true,
+                "detail": "This invoice is due or overdue."
+              },
+              {
+                "code": "payment-limit",
+                "label": "Per-payment cap",
+                "passed": true,
+                "detail": "Payment 1.00 USDC must be at or below 5.00 USDC."
+              },
+              {
+                "code": "approval",
+                "label": "Delegated approval limit",
+                "passed": true,
+                "detail": "Gross obligation 1.00 USDC must be at or below the delegated 5.00 USDC approval limit."
+              },
+              {
+                "code": "run-limit",
+                "label": "Review spending cap",
+                "passed": true,
+                "detail": "10.00 USDC remains available under this review's spending cap."
+              },
+              {
+                "code": "cash-reserve",
+                "label": "Protected operating cash",
+                "passed": true,
+                "detail": "18.00 USDC is available after earlier planned payments, operating reserve, and fee reserve."
+              }
+            ],
+            "amountCents": 100,
+            "evidence": [
+              "Cash floor 1.00 USDC plus 1.00 USDC reserved for fees.",
+              "Invoice must be a positive USD amount represented in integer cents.",
+              "Invoice reference: TEST-001.",
+              "No other invoice has this normalized vendor and invoice number.",
+              "Vendor record: Controlled test wallet · fictional vendor.",
+              "Invoice recipient must match the independently approved vendor address.",
+              "Order SYNTHETIC-PO-001 must authorize exactly the invoice amount.",
+              "Source reference: Synthetic integration fixture; test acceptance only; no real invoice.",
+              "An operator recorded acceptance of the goods or services.",
+              "Invoice due date: 2026-10-16.",
+              "This invoice is due or overdue.",
+              "Payment 1.00 USDC must be at or below 5.00 USDC.",
+              "Gross obligation 1.00 USDC must be at or below the delegated 5.00 USDC approval limit.",
+              "10.00 USDC remains available under this review's spending cap.",
+              "18.00 USDC is available after earlier planned payments, operating reserve, and fee reserve."
+            ],
+            "decidedAt": "2026-10-16T20:32:26.041Z",
+            "engine": "rules"
+          }
+        ],
+        "paidCents": 0,
+        "paymentCount": 0,
+        "heldCount": 0,
+        "blockedCount": 0,
+        "inputSnapshot": {
+          "balanceCents": 2000,
+          "policy": {
+            "reserveCents": 100,
+            "gasReserveCents": 100,
+            "perPaymentLimitCents": 500,
+            "runLimitCents": 1000,
+            "approvalRequiredAboveCents": 500
+          },
+          "vendors": [
+            {
+              "id": "circle-verification-recipient",
+              "name": "Controlled test wallet · fictional vendor",
+              "category": "Integration testing",
+              "approvedAddress": "0x948a4307b17c93a0a64dbf8d8c87aadcf40551dd"
+            }
+          ],
+          "invoices": [
+            {
+              "id": "circle-verification-001",
+              "number": "TEST-001",
+              "vendorId": "circle-verification-recipient",
+              "description": "Synthetic one-USDC integration check; no business obligation",
+              "amountCents": 100,
+              "currency": "USD",
+              "dueDate": "2026-10-16",
+              "recipientAddress": "0x948a4307b17c93a0a64dbf8d8c87aadcf40551dd",
+              "purchaseOrderRef": "SYNTHETIC-PO-001",
+              "purchaseOrderAmountCents": 100,
+              "acceptanceVerified": true,
+              "sourceReference": "Synthetic integration fixture; test acceptance only; no real invoice",
+              "status": "inbox"
+            }
+          ]
+        }
+      }
+    ],
+    "createdAt": "2026-10-16T16:25:38.322Z",
+    "revision": 7,
+    "policy": {
+      "reserveCents": 100,
+      "gasReserveCents": 100,
+      "perPaymentLimitCents": 500,
+      "runLimitCents": 1000,
+      "approvalRequiredAboveCents": 500
+    }
+  }
+}

@@ -54,6 +54,8 @@ Copy `.env.example` to `.env.local`, or use hosted runtime secrets. Both `.env.l
 
 See [integration setup](docs/integrations.md) for provider details. Only the configured owner can run pilot payments or change pilot policy. Other signed-in users have separate records and cannot spend from that wallet.
 
+Follow the [Circle setup guide](docs/circle-setup.md) to create the test key and wallet. Once configured, `npm run test:circle` reads the actual wallet and USDC balance without submitting a payment. A successful connection check does not prove that transfers work; the guide describes the separate payment and receipt check.
+
 A compatible provider never uses `OPENAI_API_KEY` or `OPENAI_MODEL`. Selecting OpenAI requires its own key and explicit approval to use that account. If AI is enabled but its configuration is incomplete, owner runs stop before creating payment intents.
 
 After the provider account owner approves a live test, this command reviews fictional demo invoices only. It cannot submit payments and does not enable AI in the running app:

@@ -57,6 +57,8 @@ function result(decisions: Decision[]) {
 function respond(body: unknown) {
   globalThis.fetch = async (input, init) => {
     calls.push({ url: String(input), init });
+    if (init?.redirect === "error")
+      throw new TypeError("Invalid redirect value, must be 'follow' or 'manual'.");
     return Response.json(body);
   };
 }
@@ -91,7 +93,7 @@ test("compatible review uses only its own endpoint, key, model and bounded decis
     new Headers(calls[0].init?.headers).get("Authorization"),
     "Bearer test-provider-key",
   );
-  assert.equal(calls[0].init?.redirect, "error");
+  assert.equal(calls[0].init?.redirect, "manual");
   const payload = JSON.parse(String(calls[0].init?.body));
   assert.equal(payload.model, "test-review-model");
   assert.equal(payload.response_format.json_schema.strict, true);
@@ -246,6 +248,51 @@ test("provider errors cannot reveal credentials or silently switch engines", asy
       /No payments were submitted/.test(error.message) &&
       !error.message.includes("test-provider-key"),
   );
+});
+
+test("provider redirects stop before any payment and never forward credentials", async () => {
+  configure();
+  const workspace = createDemoWorkspace("redirected-provider");
+  const before = structuredClone(workspace);
+  const destination = "https://untrusted.invalid/collect-provider-key";
+  globalThis.fetch = async (input, init) => {
+    calls.push({ url: String(input), init });
+    if (init?.redirect === "error")
+      throw new TypeError("Invalid redirect value, must be 'follow' or 'manual'.");
+    if (init?.redirect === "manual")
+      return new Response("test-provider-key private redirect details", {
+        status: 307,
+        headers: { Location: destination },
+      });
+    // Model a followed redirect without allowing any real network request.
+    calls.push({ url: destination, init });
+    return Response.json(result(evaluateWorkspace(workspace)));
+  };
+  let saves = 0;
+  await assert.rejects(
+    runAgent(
+      workspace,
+      async () => {
+        saves++;
+      },
+      true,
+    ),
+    (error: unknown) =>
+      error instanceof Error &&
+      /No payments were submitted/.test(error.message) &&
+      !error.message.includes("test-provider-key") &&
+      !error.message.includes(destination),
+  );
+  assert.deepEqual(workspace, before);
+  assert.equal(saves, 0);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "https://provider.invalid/v1/chat/completions");
+  assert.equal(calls[0].init?.redirect, "manual");
+  assert.equal(
+    new Headers(calls[0].init?.headers).get("Authorization"),
+    "Bearer test-provider-key",
+  );
+  assert.equal(JSON.stringify(calls).includes("test-openai"), false);
 });
 
 test("incomplete AI setup cannot create a run or payment intent", async () => {

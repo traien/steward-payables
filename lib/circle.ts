@@ -63,7 +63,8 @@ async function request(
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(20_000),
       cache: "no-store",
-      redirect: "error",
+      // Workers support manual redirects; reject 3xx below without forwarding credentials.
+      redirect: "manual",
     });
   } catch {
     // The caller retains the intent: a timeout never proves that a write failed.
