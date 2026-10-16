@@ -8,6 +8,7 @@ export type InvoiceStatus =
   | "simulated"
   | "failed";
 export type Action = "pay" | "hold" | "escalate" | "block";
+export type DecisionEngine = "rules" | "openai" | "compatible";
 export interface Vendor {
   id: string;
   name: string;
@@ -47,7 +48,7 @@ export interface Decision {
   checks: Check[];
   amountCents: number;
   decidedAt: string;
-  engine: "rules" | "openai";
+  engine: DecisionEngine;
   modelRationale?: string;
 }
 export interface Payment {
@@ -81,7 +82,7 @@ export interface AuditEvent {
 export interface AgentRun {
   id: string;
   at: string;
-  engine: "rules" | "openai";
+  engine: DecisionEngine;
   decisions: Decision[];
   paidCents: number;
   paymentCount: number;
@@ -109,6 +110,8 @@ export interface Workspace {
 }
 export interface Capabilities {
   ai: boolean;
+  aiProvider?: "openai" | "compatible";
+  aiConfigurationError?: string;
   circle: boolean;
   walletIdConfigured: boolean;
   network: "ARC-TESTNET";

@@ -26,6 +26,10 @@ const envNames = [
   "OPENAI_API_KEY",
   "OPENAI_MODEL",
   "STEWARD_ENABLE_AI",
+  "STEWARD_AI_PROVIDER",
+  "STEWARD_AI_BASE_URL",
+  "STEWARD_AI_API_KEY",
+  "STEWARD_AI_MODEL",
 ];
 const originalEnv = Object.fromEntries(
   envNames.map((name) => [name, process.env[name]]),
@@ -388,15 +392,18 @@ test("completed receipts require persisted intent and exact payee, amount, refer
   }
 });
 
-test("missing AI key explicitly reports rules-only execution without a request", async () => {
+test("enabled AI with a missing key stops without a request", async () => {
   process.env.STEWARD_ENABLE_AI = "true";
-  const result = await enhanceDecisions(workspace(), [decision()]);
-  assert.equal(result[0].engine, "rules");
-  assert.match(result[0].modelRationale!, /not performed/);
+  process.env.STEWARD_AI_PROVIDER = "openai";
+  await assert.rejects(
+    enhanceDecisions(workspace(), [decision()]),
+    /OPENAI_API_KEY is required/,
+  );
   assert.equal(calls.length, 0);
 });
 
 test("AI opt-in gate prevents all API requests even when an API key exists", async () => {
+  process.env.STEWARD_AI_PROVIDER = "openai";
   process.env.OPENAI_API_KEY = "fake-openai-key";
   for (const gate of [undefined, "false", "TRUE", "1"]) {
     if (gate === undefined) delete process.env.STEWARD_ENABLE_AI;
@@ -412,6 +419,7 @@ test("AI opt-in gate prevents all API requests even when an API key exists", asy
 });
 
 test("AI can downgrade payment but cannot elevate held/blocked invoices or edit amounts", async () => {
+  process.env.STEWARD_AI_PROVIDER = "openai";
   process.env.STEWARD_ENABLE_AI = "true";
   process.env.OPENAI_API_KEY = "fake-openai-key";
   const work = workspace();
@@ -459,6 +467,7 @@ test("AI can downgrade payment but cannot elevate held/blocked invoices or edit 
 });
 
 test("invalid, duplicate, partial, and amount-changing AI outputs fail closed", async () => {
+  process.env.STEWARD_AI_PROVIDER = "openai";
   process.env.STEWARD_ENABLE_AI = "true";
   process.env.OPENAI_API_KEY = "fake-openai-key";
   for (const reviews of [
@@ -473,6 +482,7 @@ test("invalid, duplicate, partial, and amount-changing AI outputs fail closed", 
       },
     ],
     [{ invoiceId: "invoice-1", action: "pay", rationale: "" }],
+    [{ invoiceId: "invoice-1", action: ["pay"], rationale: "Invalid type" }],
   ]) {
     globalThis.fetch = async () => aiResponse(reviews);
     await assert.rejects(
@@ -501,6 +511,7 @@ test("invalid, duplicate, partial, and amount-changing AI outputs fail closed", 
 });
 
 test("AI provider failure never silently falls back or exposes credentials", async () => {
+  process.env.STEWARD_AI_PROVIDER = "openai";
   process.env.STEWARD_ENABLE_AI = "true";
   process.env.OPENAI_API_KEY = "fake-openai-key";
   globalThis.fetch = async () => {

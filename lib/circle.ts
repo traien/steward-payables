@@ -1,5 +1,6 @@
 import { constants, publicEncrypt } from "node:crypto";
 import type { Capabilities, Invoice } from "./domain.ts";
+import { getAIStatus } from "./ai-config.ts";
 
 const API = "https://api.circle.com/v1/w3s";
 const NETWORK = "ARC-TESTNET" as const;
@@ -19,9 +20,7 @@ function object(value: unknown): JsonObject {
 /** Configuration presence only: this does not claim connectivity or authentication. */
 export function getCapabilities(): Capabilities {
   return {
-    ai:
-      process.env.STEWARD_ENABLE_AI === "true" &&
-      Boolean(process.env.OPENAI_API_KEY?.trim()),
+    ...getAIStatus(),
     circle: Boolean(
       process.env.CIRCLE_API_KEY?.trim() &&
         process.env.CIRCLE_ENTITY_SECRET?.trim() &&

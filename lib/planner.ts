@@ -1,4 +1,5 @@
 import type { Decision, Workspace } from "./domain.ts";
+import { getAIConfiguration } from "./ai-config.ts";
 
 type Review = {
   invoiceId: string;
@@ -40,24 +41,54 @@ const schema = {
   },
 };
 
+function responseText(result: JsonObject): string {
+  if (result.status !== "completed" || !Array.isArray(result.output))
+    throw new Error("Incomplete AI response.");
+  const texts: string[] = [];
+  for (const item of result.output) {
+    const output = object(item);
+    if (output.type !== "message") continue;
+    if (!Array.isArray(output.content)) throw new Error("Invalid AI message.");
+    for (const part of output.content) {
+      const content = object(part);
+      if (content.type === "refusal") throw new Error("AI refused review.");
+      if (content.type === "output_text" && typeof content.text === "string")
+        texts.push(content.text);
+    }
+  }
+  if (texts.length !== 1) throw new Error("Invalid AI result.");
+  return texts[0];
+}
+
+function chatText(result: JsonObject): string {
+  if (!Array.isArray(result.choices) || result.choices.length !== 1)
+    throw new Error("Invalid AI result.");
+  const choice = object(result.choices[0]);
+  const message = object(choice.message);
+  if (
+    choice.finish_reason !== "stop" ||
+    message.role !== "assistant" ||
+    typeof message.content !== "string" ||
+    message.refusal ||
+    message.function_call ||
+    (message.tool_calls !== undefined &&
+      (!Array.isArray(message.tool_calls) || message.tool_calls.length > 0))
+  )
+    throw new Error("Incomplete or refused AI response.");
+  return message.content;
+}
+
 export async function enhanceDecisions(
   workspace: Workspace,
   decisions: Decision[],
 ): Promise<Decision[]> {
-  if (process.env.STEWARD_ENABLE_AI !== "true")
+  const config = getAIConfiguration();
+  if (!config)
     return decisions.map((decision) => ({
       ...decision,
       engine: "rules",
       modelRationale:
         "AI review was not performed: the owner has not enabled AI API use. Deterministic rules were used.",
-    }));
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey)
-    return decisions.map((decision) => ({
-      ...decision,
-      engine: "rules",
-      modelRationale:
-        "AI review was not performed: OPENAI_API_KEY is not configured. Deterministic rules were used.",
     }));
   if (decisions.length === 0) return [];
   const input = decisions.map((decision) => {
@@ -87,60 +118,51 @@ export async function enhanceDecisions(
       },
     };
   });
+  const content = JSON.stringify({
+    policy: workspace.policy,
+    balanceCents: workspace.balanceCents,
+    invoices: input,
+  });
+  const format = { name: "invoice_reviews", strict: true, schema };
+  const body =
+    config.provider === "compatible"
+      ? {
+          model: config.model,
+          messages: [
+            { role: "system", content: instructions },
+            { role: "user", content },
+          ],
+          response_format: { type: "json_schema", json_schema: format },
+          max_tokens: 8000,
+          stream: false,
+        }
+      : {
+          model: config.model,
+          store: false,
+          instructions,
+          input: [{ role: "user", content }],
+          text: { format: { type: "json_schema", ...format } },
+          max_output_tokens: 8000,
+        };
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch(config.endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL?.trim() || "gpt-5.4-mini",
-        store: false,
-        instructions,
-        input: [
-          {
-            role: "user",
-            content: JSON.stringify({
-              policy: workspace.policy,
-              balanceCents: workspace.balanceCents,
-              invoices: input,
-            }),
-          },
-        ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "invoice_reviews",
-            strict: true,
-            schema,
-          },
-        },
-        max_output_tokens: 8000,
-      }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(45_000),
       cache: "no-store",
       redirect: "error",
     });
     if (!response.ok) throw new Error("AI request failed.");
     const result = object(await response.json());
-    if (result.status !== "completed" || !Array.isArray(result.output))
-      throw new Error("Incomplete AI response.");
-    const texts: string[] = [];
-    for (const item of result.output) {
-      const output = object(item);
-      if (output.type !== "message") continue;
-      if (!Array.isArray(output.content))
-        throw new Error("Invalid AI message.");
-      for (const part of output.content) {
-        const content = object(part);
-        if (content.type === "refusal") throw new Error("AI refused review.");
-        if (content.type === "output_text" && typeof content.text === "string")
-          texts.push(content.text);
-      }
-    }
-    if (texts.length !== 1) throw new Error("Invalid AI result.");
-    const parsed = object(JSON.parse(texts[0]));
+    const text =
+      config.provider === "compatible"
+        ? chatText(result)
+        : responseText(result);
+    const parsed = object(JSON.parse(text));
     if (
       Object.keys(parsed).length !== 1 ||
       !Array.isArray(parsed.reviews) ||
@@ -157,7 +179,8 @@ export async function enhanceDecisions(
           (decision) => decision.invoiceId === review.invoiceId,
         ) ||
         reviews.has(review.invoiceId) ||
-        !["pay", "hold", "escalate", "block"].includes(String(review.action)) ||
+        typeof review.action !== "string" ||
+        !["pay", "hold", "escalate", "block"].includes(review.action) ||
         typeof review.rationale !== "string" ||
         review.rationale.trim().length === 0 ||
         review.rationale.length > 2000
@@ -174,7 +197,7 @@ export async function enhanceDecisions(
       return {
         ...decision,
         action,
-        engine: "openai",
+        engine: config.provider,
         modelRationale: review.rationale.trim(),
         reason:
           action !== decision.action

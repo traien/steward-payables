@@ -626,14 +626,14 @@ export default function Home() {
                     <div>
                       <p className="eyebrow">THE MONEY DESK</p>
                       <h1>
-                        Good business.
+                        Pay what’s due.
                         <br />
-                        <em>Better decisions.</em>
+                        <em>Keep cash in reserve.</em>
                       </h1>
                       <p className="heading-description">
-                        The right payment, at the right time.
-                        <br className="mobile-break" /> With the evidence to
-                        back it up.
+                        Review invoices, check the evidence,
+                        <br className="mobile-break" /> and decide what can be
+                        paid today.
                       </p>
                     </div>
                     <div className="heading-action">
@@ -770,8 +770,8 @@ export default function Home() {
                       </div>
                       <h2>
                         {workspace.runs.length
-                          ? "Every payment has\na reason."
-                          : "A little judgment.\nA lot of peace of mind."}
+                          ? "Review the decisions."
+                          : "Check the invoices\nbefore paying."}
                       </h2>
                       <p>
                         {workspace.runs.length
@@ -857,9 +857,11 @@ export default function Home() {
                   <div className="desk-footnote">
                     <ShieldCheck size={16} />
                     <span>
-                      {caps?.ai
-                        ? "AI enabled by owner · billed API review for owner runs."
-                        : "Rules engine · AI assistance is off."}{" "}
+                      {caps?.aiConfigurationError
+                        ? "AI setup is incomplete · owner runs are blocked."
+                        : caps?.ai
+                          ? "AI enabled by owner · billed API review for owner runs."
+                          : "Rules engine · AI assistance is off."}{" "}
                       Every payment passes deterministic checks.
                     </span>
                     <button onClick={() => navigate("setup")}>
@@ -897,8 +899,8 @@ export default function Home() {
                         { id: "all", label: "All invoices" },
                         { id: "inbox", label: "To review" },
                         { id: "held", label: "On hold" },
-                        { id: "blocked", label: "Blocked" },
-                        { id: "paid", label: "Paid" },
+                        { id: "blocked", label: "Exceptions" },
+                        { id: "paid", label: demo ? "Simulated" : "Settled" },
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -1116,8 +1118,8 @@ export default function Home() {
                 <section className="view-enter">
                   <div className="page-heading compact">
                     <div>
-                      <p className="eyebrow">MAKE IT YOURS</p>
-                      <h1>A careful first step.</h1>
+                      <p className="eyebrow">PILOT SETUP</p>
+                      <h1>Connect your workspace.</h1>
                       <p className="heading-description">
                         Connect a testnet wallet, bring your records, and run a
                         private pilot.
@@ -1153,9 +1155,11 @@ export default function Home() {
                       <div>
                         <strong>AI assistance</strong>
                         <small>
-                          {caps?.ai
-                            ? "Enabled by owner · billed API requests"
-                            : "Off · deterministic rules engine active"}
+                          {caps?.aiConfigurationError
+                            ? "Setup incomplete · owner runs blocked"
+                            : caps?.ai
+                              ? `${caps.aiProvider === "compatible" ? "Compatible provider" : "OpenAI"} configured · connection not verified`
+                              : "Off · deterministic rules engine active"}
                         </small>
                       </div>
                     </div>
@@ -1276,16 +1280,18 @@ export default function Home() {
                         </p>
                       )}
                       <div className="quiet-note">
-                        {caps?.ai
-                          ? "AI review is enabled in server configuration. Only owner runs may use it. Set STEWARD_ENABLE_AI=false on the server to return to rules-only execution."
-                          : "AI assistance is optional and currently off. Model use requires separate permission and server configuration. No AI calls are needed to explore the demo."}
+                        {caps?.aiConfigurationError
+                          ? caps.aiConfigurationError
+                          : caps?.ai
+                            ? "AI review is enabled in server configuration. Only owner runs may use it. Set STEWARD_ENABLE_AI=false on the server to return to rules-only execution."
+                            : "AI assistance is optional and currently off. Model use requires separate permission and server configuration. No AI calls are needed to explore the demo."}
                       </div>
                     </div>
                   </div>
                   <div className="setup-step">
                     <div className="step-number">03</div>
                     <div className="step-content">
-                      <h2>Bring obligations you can stand behind.</h2>
+                      <h2>Import your invoices and evidence.</h2>
                       <p>
                         Import up to 30 invoices with vendor approvals, order
                         references, and delivery acceptance. Start with the
@@ -1530,7 +1536,7 @@ export default function Home() {
                 <>
                   <p>{selected.decision.reason}</p>
                   <span className="decision-engine">
-                    {selected.decision.engine === "openai"
+                    {selected.decision.engine !== "rules"
                       ? "AI-assisted · deterministic controls"
                       : "Deterministic rules engine"}
                   </span>

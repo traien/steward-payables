@@ -20,7 +20,9 @@ export async function runAgent(
   const run: AgentRun = {
     id: crypto.randomUUID(),
     at: now,
-    engine: decisions.some((d) => d.engine === "openai") ? "openai" : "rules",
+    engine:
+      decisions.find((decision) => decision.engine !== "rules")?.engine ??
+      "rules",
     decisions,
     paidCents: 0,
     paymentCount: 0,
@@ -41,7 +43,7 @@ export async function runAgent(
     workspace,
     "run",
     "Payment review started",
-    `${decisions.length} obligations reviewed using ${run.engine === "openai" ? "AI with deterministic checks" : "deterministic rules"}.`,
+    `${decisions.length} obligations reviewed using ${run.engine !== "rules" ? "AI with deterministic checks" : "deterministic rules"}.`,
   );
   for (const decision of decisions) {
     const invoice = workspace.invoices.find(

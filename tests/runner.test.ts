@@ -27,6 +27,10 @@ const envNames = [
   "CIRCLE_BLOCKCHAIN",
   "OPENAI_API_KEY",
   "STEWARD_ENABLE_AI",
+  "STEWARD_AI_PROVIDER",
+  "STEWARD_AI_BASE_URL",
+  "STEWARD_AI_API_KEY",
+  "STEWARD_AI_MODEL",
 ];
 const originalEnv = Object.fromEntries(
   envNames.map((name) => [name, process.env[name]]),

@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:ai": "node --env-file=.env.local --experimental-strip-types scripts/test-ai.ts",
     "typecheck": "tsc --noEmit",
     "install:ci": "node scripts/install-ci.mjs",
     "dev": "node scripts/run-framework.mjs dev",

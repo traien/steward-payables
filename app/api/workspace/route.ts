@@ -9,6 +9,7 @@ import {
 } from "@/lib/store";
 import { createDemoWorkspace, createPilotWorkspace } from "@/lib/fixtures";
 import { getCapabilities } from "@/lib/circle";
+import { isAIEnabled } from "@/lib/ai-config";
 import { appendAudit } from "@/lib/audit";
 import { actionSchema, importSchema } from "@/lib/validation";
 import { runAgent, reconcilePayments } from "@/lib/runner";
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
         await runAgent(
           workspace,
           persist,
-          context.ownerAuthorized && getCapabilities().ai,
+          context.ownerAuthorized && isAIEnabled(),
         );
         break;
       case "reconcile":
