@@ -496,7 +496,7 @@ export default function Home() {
           </span>
           <div>
             <strong>{workspace?.businessName || "Your workspace"}</strong>
-            <small>{demo ? "Sample business" : "Private business pilot"}</small>
+            <small>{demo ? "Sample business" : "Private testnet workspace"}</small>
           </div>
         </div>
         <div className="nav-label">WORKSPACE</div>
@@ -557,7 +557,7 @@ export default function Home() {
           <div className="topbar-right">
             <span className={`workspace-badge ${demo ? "" : "pilot"}`}>
               <span />
-              {demo ? "Demo workspace" : "Private pilot · testnet"}
+              {demo ? "Demo workspace" : "Testnet workspace"}
             </span>
             <button
               className="icon-button"
@@ -1635,6 +1635,19 @@ export default function Home() {
                       </>
                     )}
                   </div>
+                  {selected.payment.mode === "testnet" &&
+                    selected.payment.status === "complete" &&
+                    /^0x[0-9a-f]{64}$/i.test(selected.payment.transactionHash ?? "") && (
+                      <a
+                        className="receipt-link"
+                        href={`https://explorer.testnet.arc.io/tx/${selected.payment.transactionHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View confirmed transaction on Arc explorer
+                        <ArrowUpRight size={16} aria-hidden="true" />
+                      </a>
+                    )}
                   <details className="technical-details">
                     <summary>Execution reference</summary>
                     <code>{selected.payment.idempotencyKey}</code>

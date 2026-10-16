@@ -17,7 +17,7 @@ On October 16, 2026, Steward submitted and reconciled a **1 test-USDC transfer o
 | Explorer network fee | 0.001589925 test USDC |
 | Decision engine | Deterministic rules; AI disabled |
 
-The [application audit export](evidence/circle-testnet.json) contains the input snapshot, checks, persisted payment intent, submission ID, matching receipt and journal. Its metrics are one confirmed testnet payment, 1 test USDC and zero real USDC volume. Audit integrity passed. The export contains fictional records and public testnet identifiers only; no keys or recovery material are included.
+The [application audit export](evidence/circle-testnet.json) contains the input snapshot, checks, persisted payment intent, submission ID, normalized completed payment record and journal. It does not include the raw Circle API response. Its metrics are one confirmed testnet payment, 1 test USDC and zero real USDC volume. Audit integrity passed. The export contains fictional records and public testnet identifiers only; no keys or recovery material are included.
 
 ## What was exercised
 

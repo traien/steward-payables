@@ -196,9 +196,7 @@ a svg {
   line-height: 1.4;
   font-weight: 650;
   max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .business-context small {
   display: block;
@@ -1739,6 +1737,20 @@ h1 em {
 }
 .payment-record span {
   color: #66735b;
+}
+.receipt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.receipt-link svg {
+  flex-shrink: 0;
 }
 .payment-record strong {
   font-weight: 500;
