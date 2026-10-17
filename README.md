@@ -4,6 +4,16 @@ Steward reviews supplier invoices before paying them. It checks the approved pay
 
 Built for the [Tameion hackathon](https://tameion.thecanteenapp.com/). [Source on GitHub](https://github.com/traien/steward-payables).
 
+## Where it stands
+
+**Payments on Arc through Circle.** Steward has moved 13.85 test USDC on Arc testnet across five transfers, all submitted by the app through Circle Developer-Controlled Wallets and reconciled against Circle's `COMPLETE` state and the chain receipt.
+
+- An earlier single 1 USDC transfer proved the payment path end to end. [Transaction](https://explorer.testnet.arc.io/tx/0x318baf89186886c0723a6304f84517682aa98d2f7a5c11c2c27663cc0db7f034)
+
+The invoices behind those transfers are fictional and both wallets are mine, so this is integration evidence, not customer volume. Mainnet is disabled.
+
+**Real use.** I ran one of my own paid freelance invoices through the client-invoice review. It was a historical record, not a payment Steward collected, and I found the recordkeeping useful. No other users yet.
+
 ## Try the demo
 
 The sample business opens with 16 payable invoices, eight suppliers and five client invoices. Five historical simulated payments total 1,863 USDC. Client records show USD 11,450 invoiced, 4,200 recorded paid and 7,250 outstanding. All are fictional examples, separate from your private records.
