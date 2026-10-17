@@ -6,13 +6,15 @@ Built for the [Tameion hackathon](https://tameion.thecanteenapp.com/). [Source o
 
 ## Try the demo
 
-Run the agent to review five invoices. It simulates a 343 USDC payment after a 2% discount, holds a 600 USDC invoice to preserve the reserve, and stops three exceptions: a changed payee, a duplicate invoice and missing delivery acceptance. A previous 180 USDC simulated invoice is included to demonstrate duplicate detection.
+The sample business opens with 16 payable invoices, eight suppliers and five client invoices. Five historical simulated payments total 1,863 USDC. Client records show USD 11,450 invoiced, 4,200 recorded paid and 7,250 outstanding. All are fictional examples, separate from your private records.
 
-Add demo funds and run again to release the held invoice. Running a third time will not pay it twice. Open an invoice for its checks, or export the decision journal.
+The dashboard previews the policy before a run: one eligible payment, four holds and six exceptions. Run the agent to simulate a 343 USDC payment after a 2% discount. The remaining 907 USDC protects a 500 reserve and a 1 fee buffer, leaving 406 available; the 600 USDC invoice stays held. Other examples include changed recipients, duplicates, missing evidence, order mismatches, future due dates and owner approval limits.
+
+Add 500 demo USDC and run again to release the held invoice, leaving 807 USDC. Running a third time will not pay it twice. Open an invoice for its checks, or export the decision journal.
 
 ## Review your client invoices
 
-Open **Client invoices**, sign in, and open the private workspace as the configured owner. Record a client alias, reference, total, currency, due date, amount already received and work-acceptance status. Keep the original document in your own files; the app stores a source reference only.
+Open **Client invoices** to read the five sample records, covering paid, overdue, upcoming, pending acceptance and disputed work. Sample records cannot be edited or used to submit owner feedback. To use your own records, sign in and open the private workspace as the configured owner. Record a client alias, reference, total, currency, due date, amount already received and work-acceptance status. Keep the original document in your own files; the app stores a source reference only.
 
 The review calculates the remaining balance and suggests a next step. Paid-in-full records are historical and need no collection follow-up. Disputed work and pending acceptance take priority over overdue reminders. USD, EUR, GBP and TRY stay in their original currency; the app does not convert or add them together.
 

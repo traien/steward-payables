@@ -189,8 +189,8 @@ test("demo pays 343 once, preserves exceptions, then releases 600 after funds ar
   assert.equal(workspace.balanceCents, 90700);
   assert.equal(workspace.runs[0].paidCents, 34300);
   assert.equal(workspace.runs[0].paymentCount, 1);
-  assert.equal(workspace.runs[0].heldCount, 1);
-  assert.equal(workspace.runs[0].blockedCount, 3);
+  assert.equal(workspace.runs[0].heldCount, 4);
+  assert.equal(workspace.runs[0].blockedCount, 6);
   assert.equal(workspace.runs[0].inputSnapshot?.balanceCents, 125000);
   const ready = workspace.invoices.find(
     (invoice) => invoice.id === "invoice-ready",
@@ -215,8 +215,8 @@ test("demo pays 343 once, preserves exceptions, then releases 600 after funds ar
   );
   assert.equal(
     workspace.invoices.filter((invoice) => invoice.payment).length,
-    3,
-    "includes one synthetic historical payment",
+    7,
+    "includes five synthetic historical payments",
   );
   assert.equal(await verifyAudit(workspace.audit), true);
   assert.equal(calls.length, 0, "demo never contacts providers");

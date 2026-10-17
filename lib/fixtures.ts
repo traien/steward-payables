@@ -1,4 +1,5 @@
-import type { Invoice, Workspace } from "./domain";
+import type { ClientInvoice, Invoice, Workspace } from "./domain";
+import { reviewReceivable } from "./receivables.ts";
 
 function dateOffset(days: number): string {
   const now = new Date();
@@ -68,6 +69,30 @@ export function createDemoWorkspace(id: string): Workspace {
       category: "Copywriting",
       approvedAddress: "0x4444444444444444444444444444444444444444",
     },
+    {
+      id: "vendor-cloud",
+      name: "Cedar Cloud · fictional",
+      category: "Infrastructure",
+      approvedAddress: "0x5555555555555555555555555555555555555555",
+    },
+    {
+      id: "vendor-analytics",
+      name: "Lumen Analytics · fictional",
+      category: "Software",
+      approvedAddress: "0x6666666666666666666666666666666666666666",
+    },
+    {
+      id: "vendor-localization",
+      name: "Lingua Studio · fictional",
+      category: "Localization",
+      approvedAddress: "0x7777777777777777777777777777777777777777",
+    },
+    {
+      id: "vendor-photo",
+      name: "Finch Photography · fictional",
+      category: "Photography",
+      approvedAddress: "0x8888888888888888888888888888888888888888",
+    },
   ];
   const invoice = (
     overrides: Partial<Invoice> &
@@ -86,24 +111,41 @@ export function createDemoWorkspace(id: string): Workspace {
     status: "inbox",
     ...overrides,
   });
-  const historical = invoice({
+  const historical = (
+    overrides: Partial<Invoice> &
+      Pick<Invoice, "id" | "number" | "vendorId" | "amountCents">,
+    daysAgo: number,
+    sequence: number,
+  ): Invoice => {
+    const record = invoice({
+      ...overrides,
+      dueDate: dateOffset(-daysAgo),
+      status: "simulated",
+      ...(overrides.discountBps
+        ? { discountUntil: dateOffset(-daysAgo) }
+        : {}),
+    });
+    const savings = Math.floor(
+      (record.amountCents * (record.discountBps ?? 0)) / 10_000,
+    );
+    record.payment = {
+      idempotencyKey: `00000000-0000-4000-8000-${String(sequence).padStart(12, "0")}`,
+      mode: "demo",
+      status: "simulated",
+      amountCents: record.amountCents - savings,
+      recipientAddress: record.recipientAddress,
+      submittedAt: `${dateOffset(-daysAgo)}T12:00:00.000Z`,
+      completedAt: `${dateOffset(-daysAgo)}T12:00:00.000Z`,
+    };
+    return record;
+  };
+  const copyHistory = historical({
     id: "invoice-history",
     number: "COPY-008",
     vendorId: "vendor-copy",
     amountCents: 18_000,
     description: "Previous copywriting invoice · synthetic history",
-    dueDate: dateOffset(-7),
-    status: "simulated",
-  });
-  historical.payment = {
-    idempotencyKey: "00000000-0000-4000-8000-000000000001",
-    mode: "demo",
-    status: "simulated",
-    amountCents: 18_000,
-    recipientAddress: historical.recipientAddress,
-    submittedAt: `${dateOffset(-7)}T12:00:00.000Z`,
-    completedAt: `${dateOffset(-7)}T12:00:00.000Z`,
-  };
+  }, 7, 1);
   workspace.invoices = [
     invoice({
       id: "invoice-ready",
@@ -144,7 +186,146 @@ export function createDemoWorkspace(id: string): Workspace {
       description: "Social asset pack · acceptance not confirmed",
       acceptanceVerified: false,
     }),
-    historical,
+    invoice({
+      id: "invoice-cloud-renewal",
+      number: "CLD-042",
+      vendorId: "vendor-cloud",
+      amountCents: 8_900,
+      description: "Managed hosting · next monthly renewal",
+      dueDate: dateOffset(3),
+    }),
+    invoice({
+      id: "invoice-analytics-renewal",
+      number: "LUM-031",
+      vendorId: "vendor-analytics",
+      amountCents: 14_900,
+      description: "Analytics workspace · monthly subscription",
+      dueDate: dateOffset(5),
+    }),
+    invoice({
+      id: "invoice-localization",
+      number: "LOC-063",
+      vendorId: "vendor-localization",
+      amountCents: 28_000,
+      description: "French and German launch copy · accepted delivery",
+      dueDate: dateOffset(8),
+    }),
+    invoice({
+      id: "invoice-order-mismatch",
+      number: "DEV-207",
+      vendorId: "vendor-dev",
+      amountCents: 9_000,
+      description: "Accessibility fixes · invoice exceeds the approved order",
+      purchaseOrderAmountCents: 7_500,
+      dueDate: dateOffset(-2),
+    }),
+    invoice({
+      id: "invoice-missing-source",
+      number: "PHT-018",
+      vendorId: "vendor-photo",
+      amountCents: 42_500,
+      description: "Product photography · original invoice still needed",
+      sourceReference: "",
+      dueDate: dateOffset(-1),
+    }),
+    invoice({
+      id: "invoice-payment-cap",
+      number: "DES-106",
+      vendorId: "vendor-design",
+      amountCents: 92_000,
+      description: "Campaign identity system · above the payment limit",
+    }),
+    copyHistory,
+    historical({
+      id: "invoice-history-design",
+      number: "DES-103",
+      vendorId: "vendor-design",
+      amountCents: 50_000,
+      description: "Pitch deck and presentation kit · synthetic history",
+      discountBps: 200,
+    }, 12, 2),
+    historical({
+      id: "invoice-history-dev",
+      number: "DEV-205",
+      vendorId: "vendor-dev",
+      amountCents: 80_000,
+      description: "Customer portal milestone · synthetic history",
+      discountBps: 200,
+    }, 18, 3),
+    historical({
+      id: "invoice-history-cloud",
+      number: "CLD-041",
+      vendorId: "vendor-cloud",
+      amountCents: 8_900,
+      description: "Managed hosting · previous month, synthetic history",
+    }, 27, 4),
+    historical({
+      id: "invoice-history-video",
+      number: "VID-018",
+      vendorId: "vendor-video",
+      amountCents: 32_000,
+      description: "Product launch edit · synthetic history",
+    }, 21, 5),
+  ];
+  // Sample client records are read-only; demo feedback is never evidence of use.
+  const clientInvoice = (
+    overrides: Pick<ClientInvoice, "id" | "number" | "clientAlias" | "description" | "amountCents" | "dueDate"> & Partial<ClientInvoice>,
+  ): ClientInvoice => {
+    const record: ClientInvoice = {
+      currency: "USD",
+      paidCents: 0,
+      workStatus: "accepted",
+      sourceReference: `Synthetic client invoice / ${overrides.number}; not a business record`,
+      ...overrides,
+    };
+    record.review = reviewReceivable(record);
+    return record;
+  };
+  workspace.receivables = [
+    clientInvoice({
+      id: "receivable-paid",
+      number: "NS-2026-041",
+      clientAlias: "Juniper & Co. · fictional",
+      description: "Brand strategy and launch kit",
+      amountCents: 240_000,
+      paidCents: 240_000,
+      dueDate: dateOffset(-12),
+    }),
+    clientInvoice({
+      id: "receivable-partial",
+      number: "NS-2026-042",
+      clientAlias: "Atlas Supply · fictional",
+      description: "E-commerce redesign · final milestone",
+      amountCents: 360_000,
+      paidCents: 180_000,
+      dueDate: dateOffset(-6),
+    }),
+    clientInvoice({
+      id: "receivable-upcoming",
+      number: "NS-2026-043",
+      clientAlias: "Willow Health · fictional",
+      description: "Landing page and campaign assets",
+      amountCents: 125_000,
+      dueDate: dateOffset(9),
+    }),
+    clientInvoice({
+      id: "receivable-pending",
+      number: "NS-2026-044",
+      clientAlias: "Fieldwork Studio · fictional",
+      description: "Client portal · awaiting milestone approval",
+      amountCents: 280_000,
+      dueDate: dateOffset(2),
+      workStatus: "pending",
+    }),
+    clientInvoice({
+      id: "receivable-disputed",
+      number: "NS-2026-045",
+      clientAlias: "Harbor Collective · fictional",
+      description: "Campaign scope change · resolve before collection",
+      amountCents: 140_000,
+      dueDate: dateOffset(-3),
+      workStatus: "disputed",
+    }),
   ];
   return workspace;
 }

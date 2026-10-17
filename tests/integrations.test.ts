@@ -312,10 +312,10 @@ test("Circle transfer redirects preserve the original intent and never repeat th
 
 test("rejects mainnet configuration and live API keys before making requests", async () => {
   process.env.CIRCLE_BLOCKCHAIN = "ARC";
-  await assert.rejects(submitPayment(invoice(), KEY), /Only Arc testnet/);
+  await assert.rejects(submitPayment(invoice(), KEY), /Only Arc sandbox/);
   delete process.env.CIRCLE_BLOCKCHAIN;
   process.env.CIRCLE_API_KEY = "LIVE_API_KEY:fake-id:fake-secret";
-  await assert.rejects(submitPayment(invoice(), KEY), /test API key/);
+  await assert.rejects(submitPayment(invoice(), KEY), /sandbox API key/);
   assert.equal(calls.length, 0);
 });
 
@@ -335,7 +335,7 @@ test("checks actual wallet chain, state, and custody before any transfer", async
     };
     await assert.rejects(
       submitPayment(invoice(), KEY),
-      /live developer-controlled Arc testnet/,
+      /live developer-controlled Arc sandbox/,
     );
   }
   assert.equal(calls.filter((call) => call.init?.method === "POST").length, 0);
@@ -458,7 +458,7 @@ test("completed receipts require persisted intent and exact payee, amount, refer
     { isNative: true },
   ]) {
     receiptToken = { ...token().token, ...invalid };
-    await assert.rejects(getPayment(TX, entry), /canonical Arc testnet USDC/);
+    await assert.rejects(getPayment(TX, entry), /canonical Arc sandbox USDC/);
   }
 });
 

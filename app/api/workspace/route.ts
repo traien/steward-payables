@@ -62,7 +62,7 @@ export async function GET() {
         "Workspace opened",
         workspace.mode === "demo"
           ? "Synthetic demonstration. No customers, real invoices, or blockchain payments are represented."
-          : "Private business pilot. Testnet transfers do not settle real invoices.",
+          : "Private business pilot. Sandbox transfers do not settle real invoices.",
       );
       workspace = await insertWorkspace(workspace);
     }
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
       case "run":
         if (workspace.mode === "pilot" && !context.ownerAuthorized)
           throw new Error(
-            "Only the configured owner can execute testnet payments. Finish Setup first.",
+            "Only the configured owner can execute sandbox payments. Finish Setup first.",
           );
         await runAgent(
           workspace,
@@ -212,7 +212,7 @@ export async function POST(request: Request) {
       case "add-funds":
         if (workspace.mode !== "demo")
           throw new Error(
-            "Pilot balances come from Circle. Fund your testnet wallet with the official faucet.",
+            "Pilot balances come from Circle. Fund your sandbox wallet with the official faucet.",
           );
         workspace.balanceCents += action.amountCents;
         if (

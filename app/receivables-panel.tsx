@@ -65,6 +65,7 @@ export function ReceivablesPanel({
   const isPrivate = workspace.mode === "pilot";
   const authorized = !!capabilities.currentUserId && !!capabilities.ownerAuthorized;
   const canUse = isPrivate && authorized;
+  const canRead = !isPrivate || canUse;
 
   return (
     <section className="view-enter receivables-view">
@@ -88,7 +89,7 @@ export function ReceivablesPanel({
         )}
       </div>
 
-      {!canUse ? (
+      {!canRead ? (
         <div className="receivables-gate">
           <h2>Bring one invoice from your freelance work.</h2>
           <p>
@@ -119,17 +120,20 @@ export function ReceivablesPanel({
       ) : (
         <>
           <p className="receivables-scope">
-            Rules-based review · You decide whether to contact the client. These
-            records stay separate from outgoing payments.
+            {isPrivate
+              ? "Rules-based review · You decide whether to contact the client. These records stay separate from outgoing payments."
+              : "Sample client records · Fictional balances and review suggestions. No client has been contacted and no payment has been collected."}
           </p>
           {records.length > 0 && (
             <div className="receivables-list" aria-label="Client invoice records">
               {records.map((record) => (
-                <ReceivableRecord key={record.id} record={record} busy={busy} act={act} />
+                <ReceivableRecord key={record.id} record={record} busy={busy} act={act} readOnly={!canUse} />
               ))}
             </div>
           )}
-          {records.length >= 30 ? (
+          {!canUse ? (
+            <p className="quiet-note">Open your private workspace in Setup to add your own client invoices. Sample records are read-only.</p>
+          ) : records.length >= 30 ? (
             <p className="quiet-note">This workspace has reached its limit of 30 client invoices.</p>
           ) : records.length === 0 ? (
             <div className="receivable-first-record">
@@ -263,10 +267,11 @@ function ReceivableForm({ businessName = "", busy, act }: {
   );
 }
 
-function ReceivableRecord({ record, busy, act }: {
+function ReceivableRecord({ record, busy, act, readOnly }: {
   record: ClientInvoice;
   busy: string;
   act: WorkspaceAction;
+  readOnly: boolean;
 }) {
   const [assessment, setAssessment] = useState("");
   const [note, setNote] = useState("");
@@ -321,7 +326,7 @@ function ReceivableRecord({ record, busy, act }: {
               <p>{record.feedback.note}</p>
               <small>Recorded {dateLabel(record.feedback.recordedAt)}</small>
             </div>
-          ) : (
+          ) : !readOnly ? (
             <form className="receivable-feedback" onSubmit={submitFeedback}>
               <fieldset disabled={!!busy}>
                 <legend>Was this review useful for your actual work?</legend>
@@ -338,7 +343,7 @@ function ReceivableRecord({ record, busy, act }: {
                 </button>
               </fieldset>
             </form>
-          )}
+          ) : null}
         </div>
       ) : (
         <p className="receivable-unreviewed">Ready for review. Use “Review client invoices” to see a suggested next step.</p>

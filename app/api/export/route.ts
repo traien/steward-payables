@@ -18,7 +18,7 @@ export async function GET() {
     disclosure:
       workspace.mode === "demo"
         ? "Synthetic data and simulated payments. Zero genuine customer traction."
-        : "Owner-supplied pilot data. Test USDC has no monetary value; no real invoices are discharged. Client invoice balances and feedback are owner-reported, not verified client payments. Business participation must be evidenced separately.",
+        : "Owner-supplied pilot data. Sandbox USDC has no monetary value; no real invoices are discharged. Client invoice balances and feedback are owner-reported, not verified client payments. Business participation must be evidenced separately.",
     auditIntegrity: await verifyAudit(workspace.audit),
     metrics: {
       confirmedTestnetPayments: confirmed.length,

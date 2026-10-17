@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ArrowDownToLine,
   ArrowRight,
@@ -29,7 +29,9 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Invoice, Policy, WorkspaceResponse } from "@/lib/domain";
+import { evaluateWorkspace } from "@/lib/engine";
 import { ReceivablesPanel } from "./receivables-panel";
+import { DashboardSummary } from "./dashboard-summary";
 
 type View = "overview" | "invoices" | "receivables" | "journal" | "policy" | "setup";
 const navigation = [
@@ -46,10 +48,14 @@ const statusLabels: Record<string, string> = {
   held: "On hold",
   blocked: "Blocked",
   submitted: "Submitted",
-  settled: "Settled · testnet",
+  settled: "Complete · sandbox",
   simulated: "Simulated",
   review: "Needs review",
   failed: "Failed",
+  "preview-pay": "Eligible to pay",
+  "preview-hold": "Would hold",
+  "preview-block": "Exception",
+  "preview-escalate": "Needs review",
 };
 const money = (cents: number, decimals = true) =>
   new Intl.NumberFormat("en-US", {
@@ -119,6 +125,19 @@ export default function Home() {
   const inspectorRef = useRef<HTMLElement>(null);
   const workspace = data?.workspace;
   const caps = data?.capabilities;
+  const previewDecisions = useMemo(
+    () => workspace ? evaluateWorkspace(workspace) : [],
+    [workspace],
+  );
+  const previewByInvoice = new Map(
+    previewDecisions.map((decision) => [decision.invoiceId, decision]),
+  );
+  const previewPay = previewDecisions.filter((decision) => decision.action === "pay");
+  const previewHeld = previewDecisions.filter((decision) => decision.action === "hold");
+  const previewExceptions = previewDecisions.filter((decision) =>
+    decision.action === "block" || decision.action === "escalate",
+  );
+  const previewPaymentCents = previewPay.reduce((sum, decision) => sum + decision.amountCents, 0);
 
   async function load() {
     setBusy("load");
@@ -350,10 +369,6 @@ export default function Home() {
     workspace?.invoices.filter((invoice) =>
       ["simulated", "settled"].includes(invoice.status),
     ) || [];
-  const held =
-    workspace?.invoices.filter((invoice) => invoice.status === "held") || [];
-  const blocked =
-    workspace?.invoices.filter((invoice) => invoice.status === "blocked") || [];
   const inbox =
     workspace?.invoices.filter((invoice) =>
       ["inbox", "ready"].includes(invoice.status),
@@ -361,16 +376,6 @@ export default function Home() {
   const paidCents = paid.reduce(
     (sum, invoice) =>
       sum + (invoice.payment?.amountCents ?? invoice.amountCents),
-    0,
-  );
-  const savedCents = paid.reduce(
-    (sum, invoice) =>
-      sum +
-      Math.max(
-        0,
-        invoice.amountCents -
-          (invoice.payment?.amountCents ?? invoice.amountCents),
-      ),
     0,
   );
   const available = workspace
@@ -393,6 +398,10 @@ export default function Home() {
           .includes(query.toLowerCase()),
     ) || [];
   const demo = workspace?.mode !== "pilot";
+  const outstandingInvoices = workspace?.invoices.filter((invoice) =>
+    !["simulated", "settled", "submitted", "failed"].includes(invoice.status),
+  ) ?? [];
+  const outstandingCents = outstandingInvoices.reduce((sum, invoice) => sum + invoice.amountCents, 0);
 
   function invoiceTable(invoices: Invoice[]) {
     return (
@@ -440,7 +449,12 @@ export default function Home() {
                 <td>{dateLabel(invoice.dueDate)}</td>
                 <td className="amount-cell">{money(invoice.amountCents)}</td>
                 <td>
-                  <Status status={displayStatus(invoice)} />
+                  {!invoice.decision && previewByInvoice.has(invoice.id) ? (
+                    <span className="preview-status" title="Current policy preview. Run the agent to record a decision.">
+                      <Status status={`preview-${previewByInvoice.get(invoice.id)!.action}`} />
+                      <small>Policy preview</small>
+                    </span>
+                  ) : <Status status={displayStatus(invoice)} />}
                 </td>
                 <td>
                   <button
@@ -498,7 +512,7 @@ export default function Home() {
           </span>
           <div>
             <strong>{workspace?.businessName || "Your workspace"}</strong>
-            <small>{demo ? "Sample business" : "Private testnet workspace"}</small>
+            <small>{demo ? "Sample business" : "Private sandbox workspace"}</small>
           </div>
         </div>
         <div className="nav-label">WORKSPACE</div>
@@ -546,7 +560,7 @@ export default function Home() {
           </div>
           <div className="network-label">
             <span className="network-dot" />
-            <span>Built for Arc testnet</span>
+            <span>Built on Arc · sandbox</span>
             <ArrowUpRight size={13} />
           </div>
           <p className="sidebar-fine">An accountable payments agent.</p>
@@ -561,7 +575,7 @@ export default function Home() {
           <div className="topbar-right">
             <span className={`workspace-badge ${demo ? "" : "pilot"}`}>
               <span />
-              {demo ? "Demo workspace" : "Testnet workspace"}
+              {demo ? "Sample workspace" : "Sandbox workspace"}
             </span>
             <button
               className="icon-button"
@@ -625,19 +639,14 @@ export default function Home() {
           ) : (
             <>
               {view === "overview" && (
-                <section className="view-enter">
-                  <div className="page-heading">
+                <section className="view-enter dashboard-view">
+                  <div className="page-heading dashboard-heading">
                     <div>
                       <p className="eyebrow">THE MONEY DESK</p>
-                      <h1>
-                        Pay what’s due.
-                        <br />
-                        <em>Keep cash in reserve.</em>
-                      </h1>
+                      <h1>Your business, <em>in balance.</em></h1>
                       <p className="heading-description">
-                        Review invoices, check the evidence,
-                        <br className="mobile-break" /> and decide what can be
-                        paid today.
+                        {workspace.vendors.length} suppliers · {workspace.invoices.length} bills · {workspace.receivables?.length ?? 0} client invoices.
+                        {" "}Every payment starts with the evidence.
                       </p>
                     </div>
                     <div className="heading-action">
@@ -657,15 +666,23 @@ export default function Home() {
                       <span>
                         {demo
                           ? "Simulated payments. No real funds."
-                          : "Owner-authorized testnet transfers only."}
+                          : "Sandbox transfers. No monetary value."}
                       </span>
                     </div>
                   </div>
+                  {!demo && (
+                    <div className="sample-workspace-banner">
+                      <span><strong>See a working business day.</strong> Explore sample invoices, receipts and client records.</span>
+                      <button className="text-button" disabled={!!busy} onClick={async () => {
+                        if (await act("demo", {}, "Sample business opened. Your private records are saved separately.")) setSelectedId(null);
+                      }}>Explore sample business <ArrowRight size={15} /></button>
+                    </div>
+                  )}
                   <div className="desk-grid">
                     <section className="balance-panel">
                       <div className="panel-top">
                         <span className="eyebrow">
-                          {demo ? "DEMO TREASURY" : "TESTNET TREASURY"}
+                          {demo ? "DEMO TREASURY" : "SANDBOX TREASURY"}
                         </span>
                         <Wallet size={20} />
                       </div>
@@ -766,32 +783,28 @@ export default function Home() {
                     </section>
                     <section className="agent-brief">
                       <div className="brief-top">
-                        <span className="eyebrow">YOUR AGENT’S BRIEF</span>
+                        <span className="eyebrow">CURRENT POLICY PREVIEW</span>
                         <span className="small-live">
                           <span />
-                          {busy === "run" ? "WORKING" : "READY WHEN YOU ARE"}
+                          {busy === "run" ? "REVIEWING" : "BEFORE THE NEXT RUN"}
                         </span>
                       </div>
                       <h2>
-                        {workspace.runs.length
-                          ? "Review the decisions."
-                          : "Check the invoices\nbefore paying."}
+                        {previewPay.length
+                          ? `${money(previewPaymentCents)} fits your policy.`
+                          : previewDecisions.length
+                            ? "Keep cash where it belongs."
+                            : "Your desk is up to date."}
                       </h2>
                       <p>
-                        {workspace.runs.length
-                          ? `${paid.length} ${demo ? "simulated payment" : "settled testnet payment"}${paid.length === 1 ? "" : "s"}. ${held.length} on hold. ${blocked.length} exceptions. Open any invoice to see exactly why.`
-                          : `I’ll review ${workspace.invoices.filter((invoice) => !["simulated", "settled", "submitted"].includes(invoice.status)).length} outstanding invoices, match the evidence, and protect your ${money(workspace.policy.reserveCents, false)} reserve before anything moves.`}
+                        {previewDecisions.length
+                          ? `Based on today's invoices and your ${money(workspace.policy.reserveCents, false)} reserve. Run the agent to record these rules-based decisions.`
+                          : "No outstanding bills to review. Add your next invoice or check your client records."}
                       </p>
-                      <div className="brief-steps">
-                        <span>
-                          <Check size={13} /> Verify the obligation
-                        </span>
-                        <span>
-                          <Check size={13} /> Respect your limits
-                        </span>
-                        <span>
-                          <Check size={13} /> Record the reasoning
-                        </span>
+                      <div className="brief-priorities">
+                        <div><span>{previewPay.length.toString().padStart(2, "0")}</span><small>Eligible</small></div>
+                        <div><span>{previewHeld.length.toString().padStart(2, "0")}</span><small>Would hold</small></div>
+                        <div><span>{previewExceptions.length.toString().padStart(2, "0")}</span><small>Exceptions</small></div>
                       </div>
                       <button
                         className="text-button"
@@ -804,7 +817,7 @@ export default function Home() {
                   <div className="outcome-strip">
                     <div>
                       <span className="metric-label">
-                        {demo ? "SIMULATED PAYMENTS" : "SETTLED ON TESTNET"}
+                        {demo ? "SIMULATED PAYMENTS" : "SANDBOX PAYMENTS"}
                       </span>
                       <strong>
                         {money(paidCents)}
@@ -813,40 +826,39 @@ export default function Home() {
                     </div>
                     <div>
                       <span className="metric-label">
-                        WAITING FOR THE RIGHT TIME
+                        OPEN BILLS
                       </span>
                       <strong>
-                        {held.length.toString().padStart(2, "0")}
-                        <small>invoices on hold</small>
+                        {money(outstandingCents)}
+                        <small>{outstandingInvoices.length} bills to resolve</small>
                       </strong>
                     </div>
                     <div>
                       <span className="metric-label">
-                        CAUGHT BEFORE PAYMENT
+                        PROTECTED RESERVE
                       </span>
                       <strong>
-                        {blocked.length.toString().padStart(2, "0")}
-                        <small>payment exceptions</small>
+                        {money(workspace.policy.reserveCents)}
+                        <small>minimum cash floor</small>
                       </strong>
                     </div>
                     <div>
                       <span className="metric-label">
-                        {demo
-                          ? "DEMO DISCOUNTS CAPTURED"
-                          : "TESTNET DISCOUNTS CAPTURED"}
+                        APPROVED SUPPLIERS
                       </span>
                       <strong>
-                        {money(savedCents)}
-                        <small>from invoice terms</small>
+                        {workspace.vendors.length.toString().padStart(2, "0")}
+                        <small>payment addresses on file</small>
                       </strong>
                     </div>
                   </div>
+                  <div className="dashboard-records-grid">
                   <section className="invoices-section">
                     <div className="section-heading">
                       <div>
                         <p className="eyebrow">THE WORK IN FRONT OF YOU</p>
                         <h2>
-                          Invoice desk <span>{workspace.invoices.length}</span>
+                          Next to review <span>{outstandingInvoices.length}</span>
                         </h2>
                       </div>
                       <button
@@ -856,8 +868,10 @@ export default function Home() {
                         View all invoices <ArrowRight size={15} />
                       </button>
                     </div>
-                    {invoiceTable(workspace.invoices.slice(0, 6))}
+                    {invoiceTable((outstandingInvoices.length ? outstandingInvoices : workspace.invoices).slice(0, 5))}
                   </section>
+                  <DashboardSummary workspace={workspace} openReceivables={() => navigate("receivables")} openInvoice={setSelectedId} openJournal={() => navigate("journal")} />
+                  </div>
                   <div className="desk-footnote">
                     <ShieldCheck size={16} />
                     <span>
@@ -944,7 +958,7 @@ export default function Home() {
                     <div className="inline-note">
                       <p>
                         Pending transfers stay pending until Circle confirms
-                        their status. Testnet transfers do not settle real-world
+                        their status. Sandbox transfers do not settle real-world
                         obligations.
                       </p>
                       <button
@@ -1134,7 +1148,7 @@ export default function Home() {
                       <p className="eyebrow">PILOT SETUP</p>
                       <h1>Connect your workspace.</h1>
                       <p className="heading-description">
-                        Connect a testnet wallet, bring your records, and run a
+                        Connect a sandbox wallet, bring your records, and run a
                         private pilot.
                       </p>
                     </div>
@@ -1185,7 +1199,7 @@ export default function Home() {
                         <small>
                           {caps?.ownerAuthorized
                             ? "Authorized owner"
-                            : "Setup required for testnet execution"}
+                            : "Setup required for sandbox execution"}
                         </small>
                       </div>
                     </div>
@@ -1252,24 +1266,32 @@ export default function Home() {
                   <div className="setup-step">
                     <div className="step-number">02</div>
                     <div className="step-content">
-                      <h2>Give your agent a testnet wallet.</h2>
+                      <h2>Give your agent a sandbox wallet.</h2>
                       <p>
-                        Create a Circle developer-controlled wallet on Arc
-                        testnet. Add the following settings to your server
+                        Create a Circle developer-controlled wallet on the Arc
+                        sandbox network. Add the following settings to your server
                         environment, then refresh this page. Keep credentials on
                         the server.
                       </p>
                       <div className="env-list">
                         <code>CIRCLE_API_KEY</code>
-                        <span>Your Circle test API key</span>
+                        <span>Your Circle sandbox API key</span>
                         <code>CIRCLE_ENTITY_SECRET</code>
                         <span>Your registered 32-byte entity secret</span>
                         <code>CIRCLE_WALLET_ID</code>
-                        <span>Your Arc testnet wallet ID</span>
+                        <span>Your Arc sandbox wallet ID</span>
                         <code>CIRCLE_BLOCKCHAIN</code>
-                        <span>ARC-TESTNET</span>
+                        <span>Arc sandbox network · see the setup guide for the exact value</span>
                       </div>
                       <div className="button-row">
+                        <a
+                          className="text-button"
+                          href="https://github.com/traien/steward-payables#pilot-configuration"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Server setup guide <ArrowUpRight size={14} />
+                        </a>
                         <a
                           className="text-button"
                           href="https://developers.circle.com/wallets/dev-controlled"
@@ -1284,7 +1306,7 @@ export default function Home() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Get testnet funds <ArrowUpRight size={14} />
+                          Get sandbox funds <ArrowUpRight size={14} />
                         </a>
                       </div>
                       {caps?.walletAddress && (
@@ -1409,7 +1431,7 @@ export default function Home() {
                         Set your payment policy. Run the agent. Reconcile
                         submitted transactions until the provider confirms
                         completion, then export the journal for your records.
-                        Testnet tokens have no monetary value; a testnet
+                        Sandbox tokens have no monetary value; a sandbox
                         transfer does not pay an actual invoice.
                       </p>
                       <div className="button-row">
@@ -1482,7 +1504,7 @@ export default function Home() {
                 <span>
                   {demo
                     ? "Synthetic data · No real funds moved"
-                    : "Arc testnet · No real-world settlement"}
+                    : "Arc sandbox · No real-world settlement"}
                 </span>
               </footer>
             </>
@@ -1631,7 +1653,7 @@ export default function Home() {
                     <strong>
                       {selected.payment.mode === "demo"
                         ? "Simulation · no funds moved"
-                        : "Arc testnet"}
+                        : "Arc sandbox · no monetary value"}
                     </strong>
                     <span>Status</span>
                     <strong>{selected.payment.status}</strong>
@@ -1676,7 +1698,7 @@ export default function Home() {
                 Owner-supplied evidence.{" "}
                 {demo
                   ? "Synthetic demonstration only."
-                  : "Testnet transfers do not settle real invoices."}
+                  : "Sandbox transfers do not settle real invoices."}
               </span>
             </div>
           </aside>
@@ -1730,7 +1752,7 @@ function PolicyForm({
     [
       "gasReserveCents",
       "Keep a gas buffer",
-      "USDC set aside for network fees on Arc testnet.",
+      "USDC set aside for network fees on the Arc sandbox network.",
     ],
   ];
   return (

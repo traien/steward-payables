@@ -140,7 +140,7 @@ export async function runAgent(
     "Review complete",
     workspace.mode === "demo"
       ? `${run.paymentCount} simulated transfers. ${run.heldCount} held. ${run.blockedCount} exceptions.`
-      : "Testnet intents recorded. Reconcile to check confirmed transfers; fiat obligations remain outstanding.",
+      : "Sandbox intents recorded. Reconcile to check confirmed transfers; fiat obligations remain outstanding.",
   );
   await persist();
 }
@@ -167,8 +167,8 @@ export async function reconcilePayments(
       await appendAudit(
         workspace,
         "settled",
-        `Testnet settled · ${invoice.number}`,
-        `Confirmed testnet transfer ${payment.transactionHash ?? payment.transactionId}. This does not discharge a real-world invoice.`,
+        `Sandbox transfer complete · ${invoice.number}`,
+        `Confirmed sandbox transfer ${payment.transactionHash ?? payment.transactionId}. This does not discharge a real-world invoice.`,
         invoice.id,
       );
     } else if (result.status === "failed") {

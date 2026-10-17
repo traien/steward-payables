@@ -37,9 +37,9 @@ function config(write = false): Config {
   const walletId = process.env.CIRCLE_WALLET_ID?.trim() ?? "";
   const entitySecret = process.env.CIRCLE_ENTITY_SECRET?.trim();
   if ((process.env.CIRCLE_BLOCKCHAIN?.trim() || NETWORK) !== NETWORK)
-    throw new Error("Only Arc testnet is supported.");
+    throw new Error("Only Arc sandbox is supported.");
   if (!/^TEST_API_KEY:[^:\s]+:[^:\s]+$/.test(apiKey))
-    throw new Error("A Circle test API key is required.");
+    throw new Error("A Circle sandbox API key is required.");
   if (!UUID.test(walletId))
     throw new Error("A valid Circle wallet ID is required.");
   if (write && !/^[0-9a-f]{64}$/i.test(entitySecret ?? ""))
@@ -96,7 +96,7 @@ async function verifiedWallet(settings: Config): Promise<{ address: string }> {
     wallet.state !== "LIVE"
   ) {
     throw new Error(
-      "The configured wallet must be a live developer-controlled Arc testnet wallet.",
+      "The configured wallet must be a live developer-controlled Arc sandbox wallet.",
     );
   }
   if (typeof wallet.address !== "string" || !ADDRESS.test(wallet.address))
@@ -184,7 +184,7 @@ export async function submitPayment(
     !ADDRESS.test(invoice.recipientAddress) ||
     /^0x0{40}$/i.test(invoice.recipientAddress)
   )
-    throw new Error("A valid testnet recipient is required.");
+    throw new Error("A valid sandbox recipient is required.");
   const intent = invoice.payment;
   if (
     !intent ||
@@ -194,7 +194,7 @@ export async function submitPayment(
     intent.amountCents !== decision.amountCents ||
     intent.recipientAddress !== invoice.recipientAddress
   ) {
-    throw new Error("A matching pending testnet payment intent is required.");
+    throw new Error("A matching pending sandbox payment intent is required.");
   }
   await verifiedWallet(settings);
   const balance = await usdcBalance(settings);
@@ -202,7 +202,7 @@ export async function submitPayment(
   // Circle must resolve the ORIGINAL idempotency key without creating a second write.
   if (!balance.verified)
     throw new Error(
-      "The wallet's six-decimal Arc testnet USDC token could not be verified.",
+      "The wallet's six-decimal Arc sandbox USDC token could not be verified.",
     );
   const publicKey = (await request(settings, "/config/entity/publicKey"))
     .publicKey;
@@ -262,7 +262,7 @@ export async function getPayment(
     transaction.operation !== "TRANSFER"
   ) {
     throw new Error(
-      "Circle transaction does not match the configured testnet wallet.",
+      "Circle transaction does not match the configured sandbox wallet.",
     );
   }
   const transactionHash =
@@ -326,7 +326,7 @@ export async function getPayment(
       token.symbol !== "USDC"
     )
       throw new Error(
-        "Circle receipt does not use canonical Arc testnet USDC.",
+        "Circle receipt does not use canonical Arc sandbox USDC.",
       );
     return { status: "complete", transactionHash };
   }

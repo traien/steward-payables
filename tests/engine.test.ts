@@ -59,10 +59,10 @@ test("valid due invoice pays; review does not mutate source state", () => {
   assert.deepEqual(workspace, before);
 });
 
-test("synthetic demo has five distinct active outcomes and keeps history out of payments", () => {
+test("synthetic demo preserves the reserve scenario and keeps all sample history out of payments", () => {
   const workspace = createDemoWorkspace("demo");
   const result = evaluateWorkspace(workspace);
-  assert.equal(result.length, 5);
+  assert.equal(result.length, 11);
   const outcomes = Object.fromEntries(
     result.map((item) => [item.invoiceId, item.action]),
   );
@@ -72,9 +72,31 @@ test("synthetic demo has five distinct active outcomes and keeps history out of 
     "invoice-wallet": "escalate",
     "invoice-duplicate": "block",
     "invoice-acceptance": "escalate",
+    "invoice-cloud-renewal": "hold",
+    "invoice-analytics-renewal": "hold",
+    "invoice-localization": "hold",
+    "invoice-order-mismatch": "escalate",
+    "invoice-missing-source": "escalate",
+    "invoice-payment-cap": "block",
   });
   assert.equal(workspace.mode, "demo");
   assert.match(workspace.businessName, /synthetic/i);
+  const history = workspace.invoices.filter((invoice) => invoice.payment);
+  assert.equal(history.length, 5);
+  assert.equal(history.reduce((total, invoice) => total + invoice.payment!.amountCents, 0), 186_300);
+  for (const invoice of history) {
+    assert.equal(invoice.payment!.mode, "demo");
+    assert.equal(invoice.payment!.status, "simulated");
+    assert.equal(invoice.payment!.transactionId, undefined);
+    assert.equal(invoice.payment!.transactionHash, undefined);
+  }
+  assert.deepEqual(workspace.runs, [], "sample receipts do not manufacture an agent run");
+  assert.deepEqual(workspace.audit, [], "sample receipts do not manufacture an audit chain");
+  assert.deepEqual(
+    new Set(workspace.receivables!.map((record) => record.review?.action)),
+    new Set(["paid", "follow-up", "wait", "confirm-acceptance", "resolve-dispute"]),
+  );
+  assert.equal(workspace.receivables!.some((record) => record.feedback), false);
   workspace.balanceCents += 50_000;
   assert.equal(
     evaluateWorkspace(workspace).find(
