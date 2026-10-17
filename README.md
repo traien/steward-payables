@@ -10,6 +10,14 @@ Run the agent to review five invoices. It simulates a 343 USDC payment after a 2
 
 Add demo funds and run again to release the held invoice. Running a third time will not pay it twice. Open an invoice for its checks, or export the decision journal.
 
+## Review your client invoices
+
+Open **Client invoices**, sign in, and open the private workspace as the configured owner. Record a client alias, reference, total, currency, due date, amount already received and work-acceptance status. Keep the original document in your own files; the app stores a source reference only.
+
+The review calculates the remaining balance and suggests a next step. Paid-in-full records are historical and need no collection follow-up. Disputed work and pending acceptance take priority over overdue reminders. USD, EUR, GBP and TRY stay in their original currency; the app does not convert or add them together.
+
+Read the result and record your own assessment. Feedback is attached to the review you saw and must be reconsidered when that review changes. These records never enter the outgoing payment queue or call an AI provider. Paid amounts are owner-reported, not verified bank receipts or Circle volume. Imports cannot replace records, and editing saved records is not yet supported.
+
 ## Local setup
 
 Requires Node.js 22.13+ and npm. Dependencies stay inside the project.
@@ -31,7 +39,7 @@ npm run build
 node tests/api-smoke.mjs
 ```
 
-The API smoke test checks concurrent runs, payment replay, balances, exports and session isolation using disposable sample records. It refuses non-loopback URLs.
+The API smoke test checks concurrent runs, payment replay, balances, exports and session isolation using disposable sample records. It refuses non-loopback URLs. `tests/receivables-api-smoke.mjs` separately checks imports, owner authorization, stale-review feedback and audit exports against a fresh local production Worker. Set `STEWARD_RECEIVABLES_TEST_URL` to that Worker, configure only `STEWARD_OWNER_ID=receivables_test_owner` and `STEWARD_ENABLE_AI=false`, and use a separate D1 state directory with no provider credentials. It refuses a populated receivables workspace or a Circle-enabled Worker.
 
 ## Pilot configuration
 

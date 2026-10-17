@@ -34,6 +34,37 @@ export interface Invoice {
   decision?: Decision;
   payment?: Payment;
 }
+export interface ReceivableReview {
+  outstandingCents: number;
+  daysOverdue: number;
+  asOf: string;
+  action:
+    | "paid"
+    | "resolve-dispute"
+    | "confirm-acceptance"
+    | "wait"
+    | "follow-up";
+  reason: string;
+}
+export interface ReceivableFeedback {
+  assessment: "useful" | "needs-correction";
+  note: string;
+  recordedAt: string;
+}
+export interface ClientInvoice {
+  id: string;
+  number: string;
+  clientAlias: string;
+  description: string;
+  amountCents: number;
+  paidCents: number;
+  currency: "USD" | "EUR" | "GBP" | "TRY";
+  dueDate: string;
+  workStatus: "accepted" | "pending" | "disputed";
+  sourceReference: string;
+  review?: ReceivableReview;
+  feedback?: ReceivableFeedback;
+}
 export interface Check {
   code: string;
   label: string;
@@ -102,6 +133,7 @@ export interface Workspace {
   balanceCents: number;
   vendors: Vendor[];
   invoices: Invoice[];
+  receivables?: ClientInvoice[];
   policy: Policy;
   audit: AuditEvent[];
   runs: AgentRun[];

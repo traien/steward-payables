@@ -13,6 +13,11 @@ import { isAIEnabled } from "@/lib/ai-config";
 import { appendAudit } from "@/lib/audit";
 import { actionSchema, importSchema } from "@/lib/validation";
 import { runAgent, reconcilePayments } from "@/lib/runner";
+import {
+  importReceivable,
+  reviewReceivables,
+  recordReceivableFeedback,
+} from "@/lib/receivables";
 import type { Workspace } from "@/lib/domain";
 
 export const dynamic = "force-dynamic";
@@ -82,9 +87,17 @@ export async function POST(request: Request) {
       throw new Error("Import is too large. Use at most 30 invoices.");
     const action = actionSchema.parse(JSON.parse(body));
     const context = await session();
+    const isReceivableAction =
+      action.action === "import-receivable" ||
+      action.action === "review-receivables" ||
+      action.action === "receivable-feedback";
+    if (isReceivableAction && (!context.user || !context.ownerAuthorized))
+      throw new Error(
+        "Only the signed-in configured owner can manage private client invoices.",
+      );
     id = context.id;
     if (action.action === "demo") id = `${context.base}:demo`;
-    if (action.action === "import" || action.action === "pilot") {
+    if (action.action === "import" || action.action === "pilot" || isReceivableAction) {
       if (!context.user)
         throw new Error(
           "Sign in with ChatGPT before importing private business records.",
@@ -94,10 +107,10 @@ export async function POST(request: Request) {
     let workspace: Workspace =
       (await readWorkspace(id)) ??
       (await insertWorkspace(
-        action.action === "import" || action.action === "pilot"
+        action.action === "import" || action.action === "pilot" || isReceivableAction
           ? createPilotWorkspace(
               id,
-              action.action === "import"
+              action.action === "import" || action.action === "import-receivable"
                 ? action.businessName
                 : "Your business",
             )
@@ -107,6 +120,57 @@ export async function POST(request: Request) {
     workspace = (await readWorkspace(id))!;
     const persist = () => saveWorkspace(workspace!, token!);
     switch (action.action) {
+      case "import-receivable": {
+        const record = importReceivable(workspace, action.businessName, action.record);
+        await appendAudit(
+          workspace,
+          "receivable-import",
+          "Client invoice recorded",
+          `Owner supplied client invoice ${record.number} (${record.id}). This is money owed to the owner, not a payment instruction. Source and acceptance are owner attestations, not independent verification.`,
+        );
+        await persist();
+        break;
+      }
+      case "review-receivables": {
+        const records = reviewReceivables(workspace);
+        await appendAudit(
+          workspace,
+          "receivable-review",
+          "Client invoices reviewed",
+          JSON.stringify({
+            method: "Deterministic review of owner-supplied records. No messages or payments sent.",
+            reviews: records.map((record) => ({
+              id: record.id,
+              number: record.number,
+              currency: record.currency,
+              ...record.review,
+            })),
+          }),
+        );
+        await persist();
+        break;
+      }
+      case "receivable-feedback": {
+        const record = recordReceivableFeedback(workspace, {
+          id: action.id,
+          reviewAsOf: action.reviewAsOf,
+          assessment: action.assessment,
+          note: action.note,
+        });
+        await appendAudit(
+          workspace,
+          "receivable-feedback",
+          "Owner feedback recorded",
+          JSON.stringify({
+            id: record.id,
+            number: record.number,
+            review: record.review,
+            feedback: record.feedback,
+          }),
+        );
+        await persist();
+        break;
+      }
       case "run":
         if (workspace.mode === "pilot" && !context.ownerAuthorized)
           throw new Error(

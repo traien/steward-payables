@@ -79,6 +79,35 @@ export const importSchema = z
         message: "Each invoice must reference an imported vendor.",
       });
   });
+export const clientInvoiceSchema = z
+  .object({
+    id,
+    number: text,
+    clientAlias: text,
+    description: text,
+    amountCents: cents.min(1),
+    paidCents: cents,
+    currency: z.enum(["USD", "EUR", "GBP", "TRY"]),
+    dueDate: date,
+    workStatus: z.enum(["accepted", "pending", "disputed"]),
+    sourceReference: text,
+  })
+  .strict()
+  .refine((record) => record.paidCents <= record.amountCents, {
+    message: "Paid amount cannot exceed the invoice amount.",
+    path: ["paidCents"],
+  });
+export const importReceivableSchema = z
+  .object({ businessName: text, record: clientInvoiceSchema })
+  .strict();
+export const receivableFeedbackSchema = z
+  .object({
+    id,
+    reviewAsOf: date,
+    assessment: z.enum(["useful", "needs-correction"]),
+    note: z.string().trim().min(1).max(1000),
+  })
+  .strict();
 export const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("run") }),
   z.object({ action: z.literal("reconcile") }),
@@ -87,6 +116,19 @@ export const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pilot") }),
   z.object({ action: z.literal("add-funds"), amountCents: cents.min(1) }),
   z.object({ action: z.literal("policy"), policy: policySchema }),
+  z
+    .object({
+      action: z.literal("import-receivable"),
+      ...importReceivableSchema.shape,
+    })
+    .strict(),
+  z.object({ action: z.literal("review-receivables") }).strict(),
+  z
+    .object({
+      action: z.literal("receivable-feedback"),
+      ...receivableFeedbackSchema.shape,
+    })
+    .strict(),
   z.object({
     action: z.literal("import"),
     businessName: text,

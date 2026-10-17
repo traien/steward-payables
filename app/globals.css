@@ -2647,6 +2647,245 @@ h1 em {
   }
 }
 
+/* Client invoice records share the desk's paper and forest palette. */
+.receivables-scope {
+  color: var(--muted);
+  margin: -8px 0 26px;
+  font-size: 13px;
+}
+.receivables-gate,
+.receivable-first-record,
+.receivable-record,
+.receivable-add {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 28px;
+  background: #fdfdf9;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.receivables-gate {
+  max-width: 720px;
+}
+.receivables-gate h2,
+.receivable-first-record h2,
+.receivable-record h2 {
+  font-family: "Manrope", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+.receivables-gate > p {
+  color: var(--muted);
+  margin: 12px 0 24px;
+  max-width: 58ch;
+}
+.receivable-form {
+  margin-top: 24px;
+}
+.receivable-form fieldset,
+.receivable-feedback fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.receivable-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+}
+.receivable-fields label,
+.receivable-feedback-note {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.receivable-wide {
+  grid-column: 1 / -1;
+}
+.receivable-fields input,
+.receivable-fields select,
+.receivable-feedback textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #cbd3c2;
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+  outline-offset: 3px;
+}
+.receivable-fields select:focus-visible {
+  outline: 2px solid #779477;
+}
+.receivable-fields small {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.receivable-error {
+  color: #923f2c;
+  margin-bottom: 16px;
+}
+.receivables-list {
+  display: grid;
+  gap: 24px;
+}
+.receivable-record-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+}
+.receivable-record-heading > div:first-child {
+  min-width: 0;
+}
+.receivable-record-heading h2 {
+  margin: 5px 0 9px;
+}
+.receivable-record-heading p:not(.eyebrow) {
+  color: var(--muted);
+}
+.receivable-outstanding {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  text-align: right;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.receivable-outstanding span,
+.receivable-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.receivable-outstanding strong {
+  font-size: 24px;
+  font-weight: 550;
+}
+.receivable-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  border-block: 1px solid var(--line);
+  padding: 20px 0;
+  margin: 24px 0 16px;
+}
+.receivable-facts dd {
+  margin: 5px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.receivable-source {
+  font-size: 12px;
+}
+.receivable-source span {
+  color: var(--muted);
+  margin-right: 8px;
+}
+.receivable-review {
+  margin-top: 24px;
+}
+.receivable-review-result {
+  padding: 22px;
+  border-left: 3px solid var(--forest);
+  background: var(--soft);
+}
+.receivable-review h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 6px 0 10px;
+}
+.receivable-review-result .fine-print {
+  margin-bottom: 0;
+}
+.receivable-feedback,
+.receivable-feedback-saved {
+  padding-top: 24px;
+}
+.receivable-feedback legend {
+  font-size: 14px;
+  font-weight: 550;
+  margin-bottom: 12px;
+}
+.receivable-feedback-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-bottom: 16px;
+}
+.receivable-feedback-choices label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  cursor: pointer;
+}
+.receivable-feedback-choices input {
+  accent-color: var(--forest);
+}
+.receivable-feedback textarea {
+  resize: vertical;
+  margin-bottom: 16px;
+}
+.receivable-feedback-saved h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.receivable-feedback-saved small {
+  display: block;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.receivable-unreviewed {
+  color: var(--muted);
+  margin-top: 24px;
+}
+.receivable-add {
+  margin-top: 24px;
+}
+.receivable-add summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  min-height: 32px;
+  font-weight: 500;
+}
+@media (max-width: 680px) {
+  .sidebar nav {
+    overflow-x: auto;
+  }
+  .nav-item {
+    flex: 1 0 auto;
+  }
+  .receivables-gate,
+  .receivable-first-record,
+  .receivable-record,
+  .receivable-add {
+    padding: 20px;
+  }
+  .receivable-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .receivable-record-heading {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .receivable-outstanding {
+    text-align: left;
+  }
+  .receivable-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Maintain a readable type scale at every viewport. */
 .brand-caption {
   font-size: 10px;

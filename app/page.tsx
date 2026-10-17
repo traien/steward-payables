@@ -29,11 +29,13 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Invoice, Policy, WorkspaceResponse } from "@/lib/domain";
+import { ReceivablesPanel } from "./receivables-panel";
 
-type View = "overview" | "invoices" | "journal" | "policy" | "setup";
+type View = "overview" | "invoices" | "receivables" | "journal" | "policy" | "setup";
 const navigation = [
   { id: "overview", label: "Overview", icon: Gauge },
   { id: "invoices", label: "Invoices", icon: FileText },
+  { id: "receivables", label: "Client invoices", icon: ArrowDownToLine },
   { id: "journal", label: "Decision journal", icon: History },
   { id: "policy", label: "Payment policy", icon: SlidersHorizontal },
   { id: "setup", label: "Setup & connections", icon: Settings2 },
@@ -513,6 +515,8 @@ export default function Home() {
               <span className="nav-short">
                 {id === "journal"
                   ? "Journal"
+                  : id === "receivables"
+                    ? "Receivables"
                   : id === "policy"
                     ? "Policy"
                     : id === "setup"
@@ -953,6 +957,15 @@ export default function Home() {
                     </div>
                   )}
                 </section>
+              )}
+              {view === "receivables" && (
+                <ReceivablesPanel
+                  workspace={workspace}
+                  capabilities={data.capabilities}
+                  busy={busy}
+                  act={act}
+                  openSetup={() => navigate("setup")}
+                />
               )}
               {view === "journal" && (
                 <section className="view-enter">
