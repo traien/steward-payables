@@ -1,38 +1,43 @@
 # Steward
 
-Steward reviews supplier invoices before paying them. It checks the approved payee, purchase order and delivery acceptance, catches duplicates, and leaves enough cash for operating expenses. Each decision stays attached to the invoice.
+Steward is a payables agent for small businesses that pay suppliers in USDC on Arc. It checks every invoice before money moves, keeps an operating cash reserve intact, and records why each payment was made, held or refused.
 
-Built for the [Tameion hackathon](https://tameion.thecanteenapp.com/). [Source on GitHub](https://github.com/traien/steward-payables).
+[Demo video](https://vimeo.com/1236902639) · Built for the [Tameion](https://tameion.thecanteenapp.com/) hackathon
 
-## Where it stands
+![Steward dashboard](docs/dashboard.png)
 
-**Payments on Arc through Circle.** Steward has moved 13.85 test USDC on Arc testnet across five transfers, all submitted by the app through Circle Developer-Controlled Wallets and reconciled against Circle's `COMPLETE` state and the chain receipt.
+## Why
 
-- An earlier single 1 USDC transfer proved the payment path end to end. [Transaction](https://explorer.testnet.arc.io/tx/0x318baf89186886c0723a6304f84517682aa98d2f7a5c11c2c27663cc0db7f034)
+A transfer that succeeds can still be the wrong payment. Before paying a supplier, a business has to confirm the payout address hasn't changed, match the invoice to an order, check the work was accepted, avoid paying the same bill twice and keep enough cash for rent and payroll. Those checks usually live in email and spreadsheets, and nothing stops a payment when one is skipped. With stablecoins, settlement is instant and final, so the checks have to happen before the transfer.
 
-The invoices behind those transfers are fictional and both wallets are mine, so this is integration evidence, not customer volume. Mainnet is disabled.
+## How it works
 
-**Real use.** I ran one of my own paid freelance invoices through the client-invoice review. It was a historical record, not a payment Steward collected, and I found the recordkeeping useful. No other users yet.
+1. **Policy.** The owner sets an operating reserve, a fee buffer, a per-payment cap, a per-run cap and an approval threshold.
+2. **Review.** On each run the agent evaluates every open invoice against the approved vendor list, purchase order, delivery acceptance, duplicate detection, due date, caps and the reserve. Each invoice gets one of four decisions, with the reasons attached:
+   - `pay` – all checks pass and the payment fits the budget
+   - `hold` – valid, but paying now would break the reserve or it isn't due yet
+   - `escalate` – needs the owner, for example a changed payee or missing acceptance
+   - `block` – duplicate, over the cap or otherwise invalid
+3. **Execution.** Payments go through Circle Developer-Controlled Wallets on Arc. The server stores a payment intent with a stable idempotency key before calling Circle, so a retry or a second run can't pay the same invoice twice.
+4. **Reconciliation.** An invoice is marked paid only after the Circle transaction is `COMPLETE` and the wallet, network, recipient, amount, token and reference all match the intent.
+5. **Release.** Held invoices are reconsidered when funds arrive or the policy changes. The reserve is never relaxed to make a payment fit.
+6. **Audit.** Every decision and payment step is written to a hash-chained journal that can be exported and verified.
 
-## Try the demo
+An optional LLM review can be enabled with any OpenAI-compatible provider. It can hold or escalate a payment the rules approved, but it can't approve one that failed a rule, change a recipient or raise an amount. The response schema has no amount or address fields. It is off by default.
 
-The sample business opens with 16 payable invoices, eight suppliers and five client invoices. Five historical simulated payments total 1,863 USDC. Client records show USD 11,450 invoiced, 4,200 recorded paid and 7,250 outstanding. All are fictional examples, separate from your private records.
+A separate **Client invoices** view tracks money owed to the business: totals, payments received, due dates and acceptance status, with a suggested next step for each record. It never sends reminders or payments.
 
-The dashboard previews the policy before a run: one eligible payment, four holds and six exceptions. Run the agent to simulate a 343 USDC payment after a 2% discount. The remaining 907 USDC protects a 500 reserve and a 1 fee buffer, leaving 406 available; the 600 USDC invoice stays held. Other examples include changed recipients, duplicates, missing evidence, order mismatches, future due dates and owner approval limits.
+## On Arc testnet
 
-Add 500 demo USDC and run again to release the held invoice, leaving 807 USDC. Running a third time will not pay it twice. Open an invoice for its checks, or export the decision journal.
+Steward has completed five transfers (13.85 USDC) on Arc testnet through Circle, all submitted by the app's own API and reconciled against Circle and the chain.
 
-## Review your client invoices
+The main run was a batch of ten invoices. The agent paid the three clean ones (9.35 USDC), held one for the reserve and refused six: two copies of the same invoice with the number written differently, a changed payee, missing acceptance, an amount over the cap and a bill not yet due. Running it again paid nothing. After the reserve was lowered, the held invoice was released and paid (3.50 USDC).
 
-Open **Client invoices** to read the five sample records, covering paid, overdue, upcoming, pending acceptance and disputed work. Sample records cannot be edited or used to submit owner feedback. To use your own records, sign in and open the private workspace as the configured owner. Record a client alias, reference, total, currency, due date, amount already received and work-acceptance status. Keep the original document in your own files; the app stores a source reference only.
+Transaction links, balances and the full exports are in [docs/circle-verification.md](docs/circle-verification.md). The invoices in these runs are sample data and both wallets are developer-controlled test wallets.
 
-The review calculates the remaining balance and suggests a next step. Paid-in-full records are historical and need no collection follow-up. Disputed work and pending acceptance take priority over overdue reminders. USD, EUR, GBP and TRY stay in their original currency; the app does not convert or add them together.
+## Getting started
 
-Read the result and record your own assessment. Feedback is attached to the review you saw and must be reconsidered when that review changes. These records never enter the outgoing payment queue or call an AI provider. Paid amounts are owner-reported, not verified bank receipts or Circle volume. Imports cannot replace records, and editing saved records is not yet supported.
-
-## Local setup
-
-Requires Node.js 22.13+ and npm. Dependencies stay inside the project.
+Requires Node.js 22.13+ and npm.
 
 ```sh
 npm ci
@@ -41,57 +46,61 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 npm run dev
 ```
 
-Open the URL printed by the server. Local sign-in uses the starter's mock identity; keep this server on loopback. Hosted authentication is supplied by Sites.
+Open the URL the dev server prints. The sample workspace loads with 16 supplier invoices, eight suppliers and five client invoices, and runs without any credentials using simulated payments. Local sign-in uses a mock identity, so keep the dev server on loopback.
+
+## Configuration
+
+Copy `.env.example` to `.env.local`. Both `.env.local` and `.dev.vars` are git-ignored.
+
+| Variable               | Purpose                                                             |
+| ---------------------- | ------------------------------------------------------------------- |
+| `CIRCLE_API_KEY`       | Circle testnet API key (`TEST_API_KEY:...`); live keys are rejected |
+| `CIRCLE_ENTITY_SECRET` | Registered entity secret, 64 hex characters                         |
+| `CIRCLE_WALLET_ID`     | Developer-controlled wallet on Arc testnet                          |
+| `CIRCLE_BLOCKCHAIN`    | `ARC-TESTNET` (the only accepted value)                             |
+| `STEWARD_OWNER_ID`     | User ID allowed to send Circle payments and change policy              |
+| `STEWARD_ENABLE_AI`    | `true` to enable LLM review; defaults to `false`                    |
+| `STEWARD_AI_PROVIDER`  | `compatible` or `openai`                                            |
+| `STEWARD_AI_BASE_URL`  | HTTPS base URL for a compatible provider                            |
+| `STEWARD_AI_API_KEY`   | API key for the compatible provider                                 |
+| `STEWARD_AI_MODEL`     | Model name for the compatible provider                              |
+| `OPENAI_API_KEY`       | OpenAI key, used only when the provider is `openai`                 |
+| `OPENAI_MODEL`         | OpenAI model, defaults to `gpt-5.4-mini`                            |
+
+[docs/circle-setup.md](docs/circle-setup.md) covers creating the Circle key and wallet. Once configured, `npm run test:circle` reads the wallet and its USDC balance without sending anything. Provider details and request formats are in [docs/integrations.md](docs/integrations.md).
+
+## Testing
 
 ```sh
-npm test
+npm test                   # 79 unit and integration tests, providers mocked
 npm run typecheck
 npm run build
-# With the development server running:
-node tests/api-smoke.mjs
+node tests/api-smoke.mjs   # against a running dev server
 ```
 
-The API smoke test checks concurrent runs, payment replay, balances, exports and session isolation using disposable sample records. It refuses non-loopback URLs. `tests/receivables-api-smoke.mjs` separately checks imports, owner authorization, stale-review feedback and audit exports against a fresh local production Worker. Set `STEWARD_RECEIVABLES_TEST_URL` to that Worker, configure only `STEWARD_OWNER_ID=receivables_test_owner` and `STEWARD_ENABLE_AI=false`, and use a separate D1 state directory with no provider credentials. It refuses a populated receivables workspace or a Circle-enabled Worker.
+The API smoke test covers concurrent runs, payment replay, balances, exports and session isolation, and refuses non-loopback URLs. `tests/receivables-api-smoke.mjs` does the same for client invoices. `scripts/verify-circle-scenario.mjs` reproduces the ten-invoice batch against a real Circle testnet wallet using a separate local Worker and database.
 
-## Pilot configuration
+## Project layout
 
-Copy `.env.example` to `.env.local`, or use hosted runtime secrets. Both `.env.local` and `.dev.vars` are ignored by Git. Never commit keys or business records.
-
-| Setting                | Purpose                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| `CIRCLE_API_KEY`       | Circle test API key                                                             |
-| `CIRCLE_ENTITY_SECRET` | Registered 32-byte entity secret                                                |
-| `CIRCLE_WALLET_ID`     | Developer-controlled Arc testnet wallet                                         |
-| `CIRCLE_BLOCKCHAIN`    | Must be `ARC-TESTNET`                                                           |
-| `STEWARD_OWNER_ID`     | Signed-in user ID shown in Setup                                                |
-| `STEWARD_ENABLE_AI`    | `false` until the account owner approves API use                                |
-| `STEWARD_AI_PROVIDER`  | Explicitly choose `compatible` or `openai`; no automatic fallback               |
-| `STEWARD_AI_BASE_URL`  | Compatible provider's HTTPS API base, such as `https://provider.example/v1` |
-| `STEWARD_AI_API_KEY`   | Separate key for the compatible provider                                        |
-| `STEWARD_AI_MODEL`     | Model supported by that provider; no default                                    |
-| `OPENAI_API_KEY`       | Optional OpenAI key, used only with the OpenAI endpoint                         |
-| `OPENAI_MODEL`         | Defaults to `gpt-5.4-mini` for OpenAI                                           |
-
-See [integration setup](docs/integrations.md) for provider details. Only the configured owner can run pilot payments or change pilot policy. Other signed-in users have separate records and cannot spend from that wallet.
-
-Follow the [Circle setup guide](docs/circle-setup.md) to create the test key and wallet. Once configured, `npm run test:circle` reads the actual wallet and USDC balance without submitting a payment. A successful connection check does not prove that transfers work; the guide describes the separate payment and receipt check.
-
-A compatible provider never uses `OPENAI_API_KEY` or `OPENAI_MODEL`. Selecting OpenAI requires its own key and explicit approval to use that account. If AI is enabled but its configuration is incomplete, owner runs stop before creating payment intents.
-
-After the provider account owner approves a live test, this command reviews fictional demo invoices only. It cannot submit payments and does not enable AI in the running app:
-
-```sh
-STEWARD_ENABLE_AI=true npm run test:ai
+```
+app/                  UI and API routes (workspace actions, audit export)
+lib/engine.ts         invoice rules and pay/hold/escalate/block decisions
+lib/runner.ts         runs, payment intents and reconciliation
+lib/circle.ts         Circle Developer-Controlled Wallets adapter
+lib/planner.ts        optional LLM review
+lib/audit.ts          hash-chained decision journal
+lib/receivables.ts    client invoice review
+lib/store.ts          D1 persistence with workspace locking
+tests/                unit, integration and API smoke tests
+docs/                 Circle setup, integration contract, testnet evidence
 ```
 
-## How payments work
+Stack: React, Vinext (Next.js App Router on Vite), Cloudflare Workers, D1 with Drizzle, Circle Developer-Controlled Wallets, Arc testnet.
 
-The rules check the invoice and reserve the amount within the run budget. An optional model review may hold or reject an eligible payment, but cannot change its amount or recipient or override a failed check.
+## Limitations
 
-The server saves a payment intent and UUID before contacting Circle. If the response is lost, reconciliation reuses that UUID. It marks a transfer complete only after checking the receipt's wallet, network, recipient, amount, token and reference. Failed intents stay in the journal for investigation.
-
-D1 locks and revision checks serialize workspace changes. Imports append records; they cannot replace an invoice ID or change an approved vendor's address. Runs retain input snapshots. Journal entries are hash chained, but a server operator can replace the entire history; the hashes are not independent proof.
-
-These controls run in application code. There is no contract-enforced spending limit, scheduler or accounting-system write-back. Vendor approval and delivery acceptance are supplied by the operator. Testnet transfers have no monetary value and do not settle real invoices.
-
-The app uses React, the Next.js App Router interface, Vinext, Cloudflare Workers and D1. The Sites starter supplies hosting and authentication integration.
+- Testnet only. Mainnet execution is disabled.
+- Caps, allowlists and the reserve are enforced by the server, not by an onchain policy. Circle's custom wallet policies are not available on testnet yet.
+- Vendor approval and delivery acceptance are entered by the operator, not verified independently.
+- The journal's hash chain detects edits to individual entries, but a server operator could replace the whole history.
+- No accounting system integration or scheduled runs yet.

@@ -1,6 +1,6 @@
-# Verify Circle on Arc testnet
+# Circle setup on Arc testnet
 
-Steward's automated tests use mocked Circle responses. They do not prove that an account, wallet or payment works. This runbook separates account setup, a read-only connection check, and a payment through the application.
+The automated tests mock Circle. This guide covers account setup, a read-only connection check and a first payment through the app.
 
 ## 1. Set up the Circle account and wallet
 
@@ -9,7 +9,7 @@ Steward's automated tests use mocked Circle responses. They do not prove that an
 3. Create a developer-controlled wallet set and an **Arc Testnet** wallet following [Circle's wallet quickstart](https://developers.circle.com/wallets/dev-controlled/create-your-first-wallet). Record the wallet's UUID as `CIRCLE_WALLET_ID`; its `0x…` address is a different value. Existing wallets can be reused if they belong to the same configured account and secret.
 4. Use the [Circle Faucet](https://faucet.circle.com/) to send **testnet USDC on Arc Testnet** to the wallet address. These are test tokens. Steward accepts only `ARC-TESTNET` and the canonical USDC contract `0x3600000000000000000000000000000000000000`.
 
-Enter configuration in the ignored `.env.local` file from an editor. Do not put keys in shell commands, screenshots, source files or chat. Keep any existing AI settings; Circle verification does not need AI. The registered entity secret is required for transfers, but the read-only check below needs only the test API key and wallet ID.
+Add the values to the git-ignored `.env.local` file. Keep keys out of shell history and screenshots. The registered entity secret is required for transfers, but the read-only check below needs only the test API key and wallet ID.
 
 ```dotenv
 CIRCLE_API_KEY=
@@ -36,10 +36,10 @@ This proves that the configured test API key can read that wallet. It does **not
 
 ## 3. Verify a payment through Steward
 
-After the connection check succeeds, restart the local server so it reads the new configuration. Configure `STEWARD_OWNER_ID` for the signed-in owner. Use the pilot workspace with a small, explicitly authorized test invoice and a verified recipient address. Keep the amount within the configured payment limits and leave enough test USDC for the cash reserve and gas buffer.
+After the connection check succeeds, restart the local server so it reads the new configuration. Configure `STEWARD_OWNER_ID` for the signed-in owner. Use the private workspace with a small invoice and a verified recipient address. Keep the amount within the configured payment limits and leave enough test USDC for the cash reserve and gas buffer.
 
-Run the agent in the pilot workspace. Preserve the pending payment intent and its idempotency key if a request times out. Use reconciliation until the adapter verifies a matching `COMPLETE` receipt. A submitted transaction ID alone is not successful settlement. Do not reset the workspace or create a replacement invoice to retry an unresolved payment.
+Run the agent in the private workspace. Preserve the pending payment intent and its idempotency key if a request times out. Use reconciliation until the adapter verifies a matching `COMPLETE` receipt. A submitted transaction ID alone is not successful settlement. Do not reset the workspace or create a replacement invoice to retry an unresolved payment.
 
-Record the transaction hash, explorer link, amount, recipient and audit export. Check the receipt against the invoice and show the completed payment in the demo. Only then describe the Circle payment path as verified. Keep fictional fixtures labeled as demo data; a genuine business pilot needs the business's participation and permission.
+Record the transaction hash, explorer link, amount, recipient and audit export, and check the receipt against the invoice.
 
-The [integration contract](integrations.md) documents receipt checks. Read-only connection results and synthetic test payments do not establish business adoption.
+The [integration contract](integrations.md) documents the receipt checks. For a larger run, `scripts/verify-circle-scenario.mjs` reproduces the ten-invoice batch described in [circle-verification.md](circle-verification.md).

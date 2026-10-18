@@ -4,13 +4,13 @@ The app can run with deterministic rules and simulated payments without external
 
 ## Optional AI review
 
-AI API use is disabled by default, including when an `OPENAI_API_KEY` already exists. The owner requires separate permission before using their OpenAI account. A supplied compatible-provider key does not authorize OpenAI account use.
+LLM review is disabled by default, even when an `OPENAI_API_KEY` is present.
 
 For a compatible provider, set `STEWARD_AI_PROVIDER=compatible`, `STEWARD_AI_BASE_URL`, `STEWARD_AI_API_KEY` and `STEWARD_AI_MODEL` in server-only secrets. The adapter calls `/chat/completions` beneath the base URL. It requires HTTPS, rejects URL credentials, queries and fragments, and refuses redirects. It never reads an OpenAI key or model as a fallback. The selected provider must support Chat Completions with JSON Schema output; an “OpenAI-compatible” label alone does not prove support.
 
-For OpenAI, explicitly select `STEWARD_AI_PROVIDER=openai` and supply `OPENAI_API_KEY` after obtaining permission for that account. `OPENAI_MODEL` defaults to `gpt-5.4-mini`. This path always calls `POST https://api.openai.com/v1/responses`, using strict JSON Schema output and `store: false`.
+For OpenAI, select `STEWARD_AI_PROVIDER=openai` and supply `OPENAI_API_KEY`. `OPENAI_MODEL` defaults to `gpt-5.4-mini`. This path always calls `POST https://api.openai.com/v1/responses`, using strict JSON Schema output and `store: false`.
 
-After approving the selected provider, set `STEWARD_ENABLE_AI=true` to enable model review for owner runs. The planner sends invoice descriptions, source references, purchase-order evidence, rule decisions and business policy. Do not send confidential business records without the business's permission to process them with that provider. Provider retention is not controlled by Steward; OpenAI's `store: false` is not a zero-retention promise.
+Set `STEWARD_ENABLE_AI=true` to enable model review for owner runs. The planner sends invoice descriptions, source references, purchase-order evidence, rule decisions and business policy. Do not send confidential business records without the business's permission to process them with that provider. Provider retention is not controlled by Steward; OpenAI's `store: false` is not a zero-retention promise.
 
 The application rules determine payment eligibility and amounts first. AI may retain a payable decision or stop it for review; held, escalated, and blocked decisions cannot be promoted. The response schema has no amount or destination field, and the parser rejects unexpected fields, unknown or duplicate invoice IDs, omissions, refusals, and incomplete responses. Invoice text is explicitly treated as untrusted data in the instruction. Recipient addresses and credentials are not included in the model input. Original evidence and checks remain attached to decisions.
 
@@ -31,7 +31,7 @@ Required server secrets/configuration:
 | `CIRCLE_WALLET_ID`     | Existing developer-controlled wallet UUID on Arc testnet.           |
 | `CIRCLE_BLOCKCHAIN`    | Optional; defaults to `ARC-TESTNET`. Every other value is rejected. |
 
-The integration does not create accounts, register entity secrets, create wallets, request faucet funds, or support mainnet. Those setup steps must be completed separately using the owner's Circle account. Never put credentials in source files, chat, screenshots, audit exports, or public environment variables. Use only no-value test tokens.
+The integration does not create accounts, register entity secrets, create wallets, request faucet funds, or support mainnet; see [Circle setup](circle-setup.md). Keep credentials out of source files, screenshots, audit exports and public environment variables.
 
 All requests use `https://api.circle.com/v1/w3s` with server-only bearer authentication. Before each write, the adapter retrieves `/wallets/{id}` and verifies the returned ID, `ARC-TESTNET` network, `LIVE` state, and `DEVELOPER` custody. This checks the actual wallet rather than trusting an environment label. See [Circle API keys](https://developers.circle.com/api-reference/keys) and [Retrieve a wallet](https://developers.circle.com/api-reference/wallets/developer-controlled-wallets/get-wallet).
 
@@ -47,6 +47,6 @@ Only `COMPLETE` with a valid transaction hash and a matching persisted invoice i
 
 Payment caps, vendor allowlists, invoice evidence checks, and cash reserves are enforced by this application's server. They are not presented as Circle-enforced wallet policies: Circle's [agent wallet spending policies](https://developers.circle.com/agent-stack/agent-wallets/wallet-operations/custom-policies) currently require mainnet and do not support testnet. This prototype does not establish mainnet security or real-world invoice discharge.
 
-## Verification performed
+## Tests
 
-`tests/integrations.test.ts` uses mocked fetch responses and an ephemeral RSA key pair. It covers mainnet/live-key rejection, actual wallet validation, canonical USDC accounting, discounted exact amounts, fresh decryptable ciphertext, persistent idempotency, sanitized ambiguous errors, transaction-state mapping, AI privilege boundaries and malformed AI outputs. `tests/compatible-provider.test.ts` checks separate credentials, exact request routing, incomplete configuration, response validation and stopping runs before payment intents. These automated tests make no provider requests and move no funds. A successful onchain transfer is still required before claiming a working live testnet pilot.
+`tests/integrations.test.ts` uses mocked fetch responses and an ephemeral RSA key pair. It covers mainnet/live-key rejection, actual wallet validation, canonical USDC accounting, discounted exact amounts, fresh decryptable ciphertext, persistent idempotency, sanitized ambiguous errors, transaction-state mapping, AI privilege boundaries and malformed AI outputs. `tests/compatible-provider.test.ts` checks separate credentials, exact request routing, incomplete configuration, response validation and stopping runs before payment intents. These automated tests make no provider requests and move no funds. Live testnet runs are recorded in [circle-verification.md](circle-verification.md).
